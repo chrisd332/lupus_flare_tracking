@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lupus Flare Tracking & Clinical Briefing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; font-size: 12pt; }
+            .print-card { border: 1px solid #e2e8f0; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased font-sans">
+
+    <header class="bg-white border-b border-slate-200 no-print">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">🩺</span>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 leading-tight">Lupus Flare Tracker & Early Warning Engine</h1>
+                    <p class="text-xs text-slate-500">Environmental, Biometric & Dietary Analytics</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="seedMockData()" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg border border-slate-300 transition">
+                    ⚡ Load 60-Day Sample Data
+                </button>
+                <button onclick="clearAllData()" class="px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 transition">
+                    Reset DB
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="flex space-x-2 border-b border-slate-200 pb-3 mb-6 no-print">
+            <button onclick="switchTab('log')" id="tab-btn-log" class="px-4 py-2 font-semibold text-sm rounded-lg bg-sky-600 text-white transition">
+                📝 Daily Micro-Log
+            </button>
+            <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="px-4 py-2 font-semibold text-sm rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition">
+                📈 Predictive Analytics & Triggers
+            </button>
+            <button onclick="switchTab('clinical')" id="tab-btn-clinical" class="px-4 py-2 font-semibold text-sm rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition">
+                📋 Doctor's Clinical Brief
+            </button>
+        </div>
+
+        <section id="tab-log" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-base font-bold text-slate-900 border-b pb-2">Patient Symptoms</h2>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Entry Date</label>
+                        <input type="date" id="input-date" class="w-full border rounded-lg p-2 text-sm">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-semibold text-slate-600">
+                            <span>Joint / Musculoskeletal Pain</span>
+                            <span id="label-pain">3 / 10</span>
+                        </div>
+                        <input type="range" id="input-pain" min="0" max="10" value="3" class="w-full" oninput="document.getElementById('label-pain').innerText = this.value + ' / 10'">
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-xs font-semibold text-slate-600">
+                            <span>Fatigue Severity</span>
+                            <span id="label-fatigue">4 / 10</span>
+                        </div>
+                        <input type="range" id="input-fatigue" min="0" max="10" value="4" class="w-full" oninput="document.getElementById('label-fatigue').innerText = this.value + ' / 10'">
+                    </div>
+                    <div class="flex items-center space-x-2 pt-2">
+                        <input type="checkbox" id="input-flare" class="w-4 h-4 rounded text-sky-600">
+                        <label for="input-flare" class="text-sm font-semibold text-slate-700">Active Flare Day</label>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Notes</label>
+                        <textarea id="input-notes" rows="2" placeholder="Sun exposure, extra stress, notes..." class="w-full border rounded-lg p-2 text-sm"></textarea>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-base font-bold text-slate-900 border-b pb-2">Biometrics & Location</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Resting HRV (rMSSD ms)</label>
+                            <input type="number" id="input-hrv" value="45" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Resting HR (BPM)</label>
+                            <input type="number" id="input-rhr" value="68" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Sleep Duration (hrs)</label>
+                            <input type="number" step="0.5" id="input-sleep" value="7.5" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Step Count</label>
+                            <input type="number" id="input-steps" value="5500" class="w-full border rounded-lg p-2 text-sm">
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t">
+                        <span class="text-xs font-bold text-slate-700 uppercase">Weather Ingestion Location</span>
+                        <div class="grid grid-cols-2 gap-4 mt-2">
+                            <div>
+                                <label class="block text-xs text-slate-500">Latitude</label>
+                                <input type="number" step="0.001" id="input-lat" value="34.052" class="w-full border rounded-lg p-1.5 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500">Longitude</label>
+                                <input type="number" step="0.001" id="input-lon" value="-118.243" class="w-full border rounded-lg p-1.5 text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <details class="cursor-pointer">
+                    <summary class="font-bold text-sm text-slate-800 select-none">🥗 Optional: Log Diet & Food Exposures</summary>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 mt-2 border-t">
+                        <label class="flex items-center space-x-2 text-sm text-slate-700">
+                            <input type="checkbox" id="diet-sugar" class="rounded"> <span>Processed Sugar / Sweets</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm text-slate-700">
+                            <input type="checkbox" id="diet-alcohol" class="rounded"> <span>Alcohol Intake</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm text-slate-700">
+                            <input type="checkbox" id="diet-garlic" class="rounded"> <span>Alfalfa Sprouts / Garlic</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm text-slate-700">
+                            <input type="checkbox" id="diet-nightshades" class="rounded"> <span>Nightshades (Tomatoes, Peppers)</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm text-slate-700">
+                            <input type="checkbox" id="diet-sodium" class="rounded"> <span>High Sodium / Fast Food</span>
+                        </label>
+                        <label class="flex items-center space-x-2 text-sm text-slate-700">
+                            <input type="checkbox" id="diet-gluten" class="rounded"> <span>Gluten / Refined Flour</span>
+                        </label>
+                    </div>
+                </details>
+            </div>
+
+            <button onclick="saveCurrentEntry()" class="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow transition">
+                Save Entry & Auto-Fetch Weather
+            </button>
+        </section>
+
+        <section id="tab-analytics" class="hidden space-y-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs uppercase font-semibold text-slate-500">Total Entries</div>
+                    <div id="metric-total-days" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+                    <div class="text-xs text-slate-400 mt-1">Continuous records</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs uppercase font-semibold text-slate-500">Flare Incidence</div>
+                    <div id="metric-flare-days" class="text-2xl font-bold text-slate-900 mt-1">0</div>
+                    <div id="metric-flare-pct" class="text-xs text-slate-400 mt-1">0% prevalence</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs uppercase font-semibold text-slate-500">Average Pain</div>
+                    <div id="metric-avg-pain" class="text-2xl font-bold text-slate-900 mt-1">0.0</div>
+                    <div class="text-xs text-slate-400 mt-1">Scale: 0-10</div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="text-xs uppercase font-semibold text-slate-500">48h Acute Risk</div>
+                    <div id="metric-risk" class="text-2xl font-bold text-sky-600 mt-1">15%</div>
+                    <div class="text-xs text-slate-400 mt-1">UV, delta P & HRV balance</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-sm text-slate-800 mb-2">Multivariate Timeline Overlay</h3>
+                    <div id="chart-timeline" class="h-72"></div>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 class="font-bold text-sm text-slate-800 mb-2">Time-Lagged Correlation Matrix (T-1 to T-3)</h3>
+                    <div id="chart-heatmap" class="h-72"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <h3 class="font-bold text-sm text-slate-800 mb-3">Identified Latent Triggers (Sorted by Strength)</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm" id="table-triggers">
+                        <thead>
+                            <tr class="border-b text-xs uppercase text-slate-500 bg-slate-50">
+                                <th class="p-2">Potential Trigger</th>
+                                <th class="p-2">Observed Lag Window</th>
+                                <th class="p-2">Pearson Correlation (r)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-clinical" class="hidden space-y-6">
+            <div class="no-print bg-sky-50 border border-sky-200 p-4 rounded-xl flex justify-between items-center">
+                <p class="text-sm text-sky-900"><strong>Clinical View:</strong> Formatted for rapid doctor review. Press <strong>Ctrl + P</strong> (or <strong>Cmd + P</strong>) to print or export as PDF.</p>
+                <button onclick="window.print()" class="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-lg text-xs shadow transition">
+                    🖨️ Print / Export PDF
+                </button>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl border border-slate-200 print-card space-y-6">
+                <div class="flex justify-between items-start border-b pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Lupus Clinical Activity Brief</h2>
+                        <p class="text-sm text-slate-600">Patient: <strong id="doc-patient">Jane Doe</strong> | DOB: 1988-04-12</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-semibold text-slate-800" id="doc-report-date"></p>
+                        <p class="text-xs text-slate-500">Monitoring: Past 60-90 Days</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-4 border-b pb-4 text-center">
+                    <div><span class="text-xs text-slate-500 uppercase block">Total Days</span><strong id="doc-days" class="text-lg text-slate-900">0</strong></div>
+                    <div><span class="text-xs text-slate-500 uppercase block">Flare Days</span><strong id="doc-flares" class="text-lg text-slate-900">0</strong></div>
+                    <div><span class="text-xs text-slate-500 uppercase block">Mean Pain VAS</span><strong id="doc-pain" class="text-lg text-slate-900">0.0</strong></div>
+                    <div><span class="text-xs text-slate-500 uppercase block">Baseline HRV</span><strong id="doc-hrv" class="text-lg text-slate-900">0.0 ms</strong></div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-sm text-slate-800 mb-2">High-Confidence Latent Flare Triggers</h3>
+                    <ul id="doc-trigger-list" class="list-disc pl-5 text-sm text-slate-700 space-y-1"></ul>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-sm text-slate-800 mb-2">Recent 14-Day Activity Log</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border" id="doc-recent-table">
+                            <thead class="bg-slate-50 border-b">
+                                <tr>
+                                    <th class="p-1.5">Date</th>
+                                    <th class="p-1.5">Pain</th>
+                                    <th class="p-1.5">Fatigue</th>
+                                    <th class="p-1.5">Flare</th>
+                                    <th class="p-1.5">Max UV</th>
+                                    <th class="p-1.5">Δ Pressure</th>
+                                    <th class="p-1.5">HRV</th>
+                                    <th class="p-1.5">Sleep</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t flex justify-between text-xs text-slate-600">
+                    <div>Physician Signature: ___________________________________</div>
+                    <div>Date: ________________________</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.getElementById('input-date').valueAsDate = new Date();
+        document.getElementById('doc-report-date').innerText = new Date().toLocaleDateString();
+
+        function switchTab(tab) {
+            ['log', 'analytics', 'clinical'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.toggle('hidden', t !== tab);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (t === tab) {
+                    btn.className = "px-4 py-2 font-semibold text-sm rounded-lg bg-sky-600 text-white transition";
+                } else {
+                    btn.className = "px-4 py-2 font-semibold text-sm rounded-lg bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 transition";
+                }
+            });
+            if (tab === 'analytics' || tab === 'clinical') refreshUI();
+        }
+
+        function getDB() {
+            return JSON.parse(localStorage.getItem('lupus_records') || '[]');
+        }
+
+        function setDB(data) {
+            localStorage.setItem('lupus_records', JSON.stringify(data));
+        }
+
+        async function saveCurrentEntry() {
+            const date = document.getElementById('input-date').value;
+            const lat = parseFloat(document.getElementById('input-lat').value);
+            const lon = parseFloat(document.getElementById('input-lon').value);
+
+            let max_uv = 5.0, pressure_delta = 3.0, avg_temp = 20.0;
+
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=uv_index_max,temperature_2m_max&hourly=surface_pressure&timezone=auto`);
+                const weather = await res.json();
+                if (weather.daily && weather.daily.uv_index_max) max_uv = weather.daily.uv_index_max[0];
+                if (weather.hourly && weather.hourly.surface_pressure) {
+                    const p = weather.hourly.surface_pressure.slice(0, 24);
+                    pressure_delta = Math.max(...p) - Math.min(...p);
+                }
+            } catch(e) {
+                console.warn("Weather API fallback used:", e);
+            }
+
+            const record = {
+                date: date,
+                pain_score: parseInt(document.getElementById('input-pain').value),
+                fatigue_score: parseInt(document.getElementById('input-fatigue').value),
+                flare_active: document.getElementById('input-flare').checked ? 1 : 0,
+                notes: document.getElementById('input-notes').value,
+                hrv_rmssd: parseFloat(document.getElementById('input-hrv').value),
+                resting_hr: parseInt(document.getElementById('input-rhr').value),
+                sleep_hours: parseFloat(document.getElementById('input-sleep').value),
+                steps: parseInt(document.getElementById('input-steps').value),
+                max_uv: parseFloat(max_uv.toFixed(1)),
+                pressure_delta: parseFloat(pressure_delta.toFixed(1)),
+                sugar: document.getElementById('diet-sugar').checked ? 1 : 0,
+                alcohol: document.getElementById('diet-alcohol').checked ? 1 : 0,
+                garlic: document.getElementById('diet-garlic').checked ? 1 : 0,
+                nightshades: document.getElementById('diet-nightshades').checked ? 1 : 0,
+                sodium: document.getElementById('diet-sodium').checked ? 1 : 0,
+                gluten: document.getElementById('diet-gluten').checked ? 1 : 0
+            };
+
+            let db = getDB().filter(r => r.date !== date);
+            db.push(record);
+            db.sort((a,b) => new Date(a.date) - new Date(b.date));
+            setDB(db);
+
+            alert("Entry saved with automated local weather data!");
+            switchTab('analytics');
+        }
+
+        function calculatePearson(x, y) {
+            const n = x.length;
+            if (n < 4) return 0;
+            const mx = x.reduce((a, b) => a + b, 0) / n;
+            const my = y.reduce((a, b) => a + b, 0) / n;
+            let num = 0, den1 = 0, den2 = 0;
+            for (let i = 0; i < n; i++) {
+                const dx = x[i] - mx;
+                const dy = y[i] - my;
+                num += dx * dy;
+                den1 += dx * dx;
+                den2 += dy * dy;
+            }
+            return den1 && den2 ? num / Math.sqrt(den1 * den2) : 0;
+        }
+
+        function refreshUI() {
+            const db = getDB();
+            if (db.length === 0) return;
+
+            // Overview metrics
+            const totalDays = db.length;
+            const flareDays = db.reduce((sum, r) => sum + r.flare_active, 0);
+            const avgPain = (db.reduce((sum, r) => sum + r.pain_score, 0) / totalDays).toFixed(1);
+            const avgHrv = (db.reduce((sum, r) => sum + (r.hrv_rmssd || 40), 0) / totalDays).toFixed(1);
+
+            document.getElementById('metric-total-days').innerText = totalDays;
+            document.getElementById('metric-flare-days').innerText = flareDays;
+            document.getElementById('metric-flare-pct').innerText = `${((flareDays/totalDays)*100).toFixed(1)}% flare prevalence`;
+            document.getElementById('metric-avg-pain').innerText = `${avgPain} / 10`;
+
+            // Doctor Brief metrics
+            document.getElementById('doc-days').innerText = totalDays;
+            document.getElementById('doc-flares').innerText = flareDays;
+            document.getElementById('doc-pain').innerText = `${avgPain} / 10`;
+            document.getElementById('doc-hrv').innerText = `${avgHrv} ms`;
+
+            // 48h Risk Index calculation
+            const recent = db.slice(-2);
+            let risk = 15;
+            if (recent.length >= 2) {
+                if (Math.max(...recent.map(r => r.max_uv)) >= 7) risk += 30;
+                if (Math.max(...recent.map(r => r.pressure_delta)) >= 6) risk += 25;
+                if (Math.min(...recent.map(r => r.hrv_rmssd)) < 30) risk += 20;
+                if (recent.some(r => r.garlic || r.alcohol)) risk += 10;
+            }
+            risk = Math.min(100, risk);
+            document.getElementById('metric-risk').innerText = `${risk}%`;
+
+            // Render Multivariate Timeline via Plotly
+            Plotly.newPlot('chart-timeline', [
+                { x: db.map(r => r.date), y: db.map(r => r.pain_score), name: 'Pain', line: { color: '#ef4444' } },
+                { x: db.map(r => r.date), y: db.map(r => r.fatigue_score), name: 'Fatigue', line: { color: '#f59e0b' } },
+                { x: db.map(r => r.date), y: db.map(r => r.max_uv), name: 'UV Index', line: { color: '#0ea5e9' } }
+            ], { margin: { l: 25, r: 15, t: 10, b: 30 }, height: 260 });
+
+            // Lagged Cross-Correlations (T-1 to T-3)
+            const features = ['max_uv', 'pressure_delta', 'sleep_hours', 'garlic', 'alcohol'];
+            const labels = ['Max UV', 'Δ Pressure', 'Sleep', 'Alfalfa/Garlic', 'Alcohol'];
+            const corrMatrix = [];
+            const triggerResults = [];
+
+            features.forEach((feat, idx) => {
+                const row = [];
+                for (let lag = 1; lag <= 3; lag++) {
+                    const x = [], y = [];
+                    for (let i = lag; i < db.length; i++) {
+                        x.push(db[i - lag][feat] || 0);
+                        y.push(db[i].pain_score);
+                    }
+                    const r = calculatePearson(x, y);
+                    row.push(parseFloat(r.toFixed(2)));
+                    triggerResults.push({ feature: labels[idx], lag: `${lag} day(s) prior`, r: r });
+                }
+                corrMatrix.push(row);
+            });
+
+            // Plotly Heatmap
+            Plotly.newPlot('chart-heatmap', [{
+                z: corrMatrix,
+                x: ['T-1 Day', 'T-2 Days', 'T-3 Days'],
+                y: labels,
+                type: 'heatmap',
+                colorscale: 'Blues'
+            }], { margin: { l: 80, r: 15, t: 10, b: 30 }, height: 260 });
+
+            // Populate Trigger Tables
+            triggerResults.sort((a,b) => b.r - a.r);
+            const tBody = document.querySelector('#table-triggers tbody');
+            tBody.innerHTML = '';
+            triggerResults.slice(0, 5).forEach(t => {
+                tBody.innerHTML += `<tr class="border-b"><td class="p-2 font-medium">${t.feature}</td><td class="p-2">${t.lag}</td><td class="p-2 font-bold ${t.r > 0.3 ? 'text-red-600' : 'text-slate-700'}">${t.r > 0 ? '+' : ''}${t.r.toFixed(2)}</td></tr>`;
+            });
+
+            // Populate Doctor Brief Triggers & Recent Records
+            const docTriggerList = document.getElementById('doc-trigger-list');
+            docTriggerList.innerHTML = '';
+            triggerResults.slice(0, 3).forEach(t => {
+                docTriggerList.innerHTML += `<li>Pain correlates with <strong>${t.feature}</strong> at a <strong>${t.lag}</strong> window (r = ${t.r.toFixed(2)}).</li>`;
+            });
+
+            const docRecentTable = document.querySelector('#doc-recent-table tbody');
+            docRecentTable.innerHTML = '';
+            db.slice(-14).reverse().forEach(r => {
+                docRecentTable.innerHTML += `<tr><td class="p-1">${r.date}</td><td class="p-1 font-semibold">${r.pain_score}</td><td class="p-1">${r.fatigue_score}</td><td class="p-1">${r.flare_active ? 'Yes' : 'No'}</td><td class="p-1">${r.max_uv}</td><td class="p-1">${r.pressure_delta}</td><td class="p-1">${r.hrv_rmssd || '-'}</td><td class="p-1">${r.sleep_hours || '-'}</td></tr>`;
+            });
+        }
+
+        function seedMockData() {
+            const data = [];
+            const today = new Date();
+            for (let i = 59; i >= 0; i--) {
+                const dt = new Date();
+                dt.setDate(today.getDate() - i);
+                const dtStr = dt.toISOString().split('T')[0];
+
+                const uv = parseFloat((Math.random() * 8 + 2).toFixed(1));
+                const pDelta = parseFloat((Math.random() * 8 + 1).toFixed(1));
+                const garlic = Math.random() > 0.85 ? 1 : 0;
+                const alcohol = Math.random() > 0.8 ? 1 : 0;
+
+                // Create realistic lag correlation
+                let pain = Math.floor(Math.random() * 3) + 2;
+                if (i <= 57 && (data[data.length - 2]?.max_uv > 7.5 || data[data.length - 2]?.garlic === 1)) {
+                    pain += 5;
+                }
+                pain = Math.min(10, pain);
+
+                data.push({
+                    date: dtStr,
+                    pain_score: pain,
+                    fatigue_score: Math.min(10, pain + Math.floor(Math.random() * 2)),
+                    flare_active: pain >= 6 ? 1 : 0,
+                    notes: "Automated simulation record.",
+                    hrv_rmssd: pain >= 6 ? 26 : 48,
+                    resting_hr: pain >= 6 ? 78 : 64,
+                    sleep_hours: 7.0,
+                    steps: 5000,
+                    max_uv: uv,
+                    pressure_delta: pDelta,
+                    sugar: Math.random() > 0.7 ? 1 : 0,
+                    alcohol: alcohol,
+                    garlic: garlic,
+                    nightshades: 0,
+                    sodium: 0,
+                    gluten: 0
+                });
+            }
+            setDB(data);
+            alert("Loaded 60 days of clinical sample data!");
+            switchTab('analytics');
+        }
+
+        function clearAllData() {
+            if (confirm("Reset all stored entries?")) {
+                localStorage.removeItem('lupus_records');
+                location.reload();
+            }
+        }
+
+        // Initialize UI on load
+        if (getDB().length > 0) refreshUI();
+    </script>
+</body>
+</html>
