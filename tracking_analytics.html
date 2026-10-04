@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lupus Flare Tracking & Clinical Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            25: '#FAF8FC',
+                            50: '#F4F0F8',
+                            100: '#EBE5F2',
+                            200: '#DDD5E7',
+                            300: '#C8BCD8',
+                            400: '#AA98C2',
+                            500: '#8C77AB',
+                            600: '#725C93',
+                            700: '#5C4879',
+                            800: '#4A3962',
+                            900: '#382B4B',
+                            950: '#231A30'
+                        }
+                    },
+                    boxShadow: {
+                        'subtle-purple': '0 2px 10px -2px rgba(56, 43, 75, 0.06)',
+                        'card-purple': '0 4px 20px -2px rgba(56, 43, 75, 0.08)',
+                        'elevated-purple': '0 10px 25px -4px rgba(56, 43, 75, 0.12), 0 4px 10px -2px rgba(56, 43, 75, 0.06)',
+                        'button-purple': '0 4px 14px 0 rgba(92, 72, 121, 0.35)'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; font-size: 10.5pt; color: #1e1b4b !important; }
+            .print-card { border: 1px solid #c8bcd8 !important; break-inside: avoid; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-brand-25 text-slate-800 antialiased font-sans">
+
+    <header class="bg-white border-b border-brand-200 shadow-card-purple no-print">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 border border-brand-400 bg-brand-100 flex items-center justify-center font-bold text-xs text-brand-900 tracking-wider uppercase shadow-subtle-purple">
+                    LFT
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-brand-950 tracking-tight leading-tight">Lupus Flare Tracker & Early Warning Engine</h1>
+                    <p class="text-xs text-brand-700">Environmental Triggers, Physical Strain & Dietary Analytics</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="seedMockData()" class="px-3.5 py-1.5 text-xs font-semibold text-brand-800 bg-brand-50 hover:bg-brand-100 border border-brand-300 shadow-subtle-purple transition">
+                    Load 60-Day Sample Data
+                </button>
+                <button onclick="clearAllData()" class="px-3.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-subtle-purple transition">
+                    Reset Database
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto px-4 py-6">
+        <div class="flex space-x-2 border-b border-brand-200 pb-3 mb-6 no-print">
+            <button onclick="switchTab('log')" id="tab-btn-log" class="px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-brand-700 text-white shadow-button-purple transition">
+                Daily Check-in
+            </button>
+            <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-800 hover:bg-brand-50 shadow-subtle-purple transition">
+                Predictive Analytics & Triggers
+            </button>
+            <button onclick="switchTab('clinical')" id="tab-btn-clinical" class="px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-800 hover:bg-brand-50 shadow-subtle-purple transition">
+                Doctor's Clinical Brief
+            </button>
+        </div>
+
+        <section id="tab-log" class="space-y-6">
+            <div class="bg-white p-5 border border-brand-200 shadow-card-purple flex flex-wrap items-center justify-between gap-4">
+                <div class="flex items-center space-x-3">
+                    <span class="text-xs font-bold text-brand-800 uppercase tracking-widest px-2.5 py-1.5 bg-brand-100 border border-brand-300 shadow-sm">Location</span>
+                    <div>
+                        <span class="text-[11px] uppercase font-bold text-brand-700 tracking-wider block">Automated Weather Station</span>
+                        <div class="text-sm font-bold text-brand-950" id="current-location-label">Bowie, Maryland</div>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <input type="text" id="input-city-state" value="Bowie, Maryland" placeholder="City, State" class="border border-brand-300 px-3 py-1.5 text-sm w-64 shadow-inner focus:border-brand-600 outline-none">
+                    <button onclick="updateLocation()" class="px-3.5 py-1.5 bg-brand-100 hover:bg-brand-200 border border-brand-300 text-xs font-bold text-brand-800 uppercase tracking-wider shadow-subtle-purple transition">
+                        Update City
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 border border-brand-200 shadow-card-purple space-y-6">
+                <div class="border-b border-brand-100 pb-3 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-brand-950">Daily Flare Check-In</h2>
+                        <p class="text-xs text-brand-700/80">Sub-minute check-in designed to monitor disease activity without user fatigue.</p>
+                    </div>
+                    <span class="text-[11px] font-bold text-brand-800 bg-brand-100 px-3 py-1 border border-brand-300 shadow-sm uppercase tracking-wider">5 Questions</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-brand-50/50 p-4 border border-brand-100 shadow-subtle-purple">
+                        <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">1. Date</label>
+                        <input type="date" id="input-date" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                    </div>
+
+                    <div class="bg-brand-50/50 p-4 border border-brand-100 shadow-subtle-purple">
+                        <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">2. Sleep Duration (Last Night)</label>
+                        <input type="number" step="0.5" id="input-sleep" value="7.5" min="0" max="24" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        <span class="text-[11px] text-brand-800/60 mt-1 block">Total estimated hours of restorative sleep</span>
+                    </div>
+
+                    <div class="bg-brand-50/50 p-4 border border-brand-100 shadow-subtle-purple">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold text-brand-900 uppercase tracking-wider">3. Joint & Body Pain Level</label>
+                            <span id="label-pain" class="text-xs font-bold text-brand-900 bg-white px-2.5 py-0.5 border border-brand-300 shadow-sm">3 / 10</span>
+                        </div>
+                        <input type="range" id="input-pain" min="0" max="10" value="3" class="w-full h-1.5 bg-brand-200 appearance-none cursor-pointer accent-brand-700" oninput="document.getElementById('label-pain').innerText = this.value + ' / 10'">
+                        <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                            <span>0 (No Pain)</span>
+                            <span>5 (Moderate)</span>
+                            <span>10 (Severe / Bedridden)</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-brand-50/50 p-4 border border-brand-100 shadow-subtle-purple">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold text-brand-900 uppercase tracking-wider">4. Fatigue / Energy Depletion</label>
+                            <span id="label-fatigue" class="text-xs font-bold text-amber-900 bg-amber-50 px-2.5 py-0.5 border border-amber-300 shadow-sm">4 / 10</span>
+                        </div>
+                        <input type="range" id="input-fatigue" min="0" max="10" value="4" class="w-full h-1.5 bg-brand-200 appearance-none cursor-pointer accent-amber-600" oninput="document.getElementById('label-fatigue').innerText = this.value + ' / 10'">
+                        <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                            <span>0 (Full Energy)</span>
+                            <span>5 (Sluggish)</span>
+                            <span>10 (Debilitating Exhaustion)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 bg-brand-100/70 border border-brand-300 shadow-subtle-purple flex items-center space-x-3">
+                    <input type="checkbox" id="input-flare" class="w-4 h-4 text-brand-700 focus:ring-brand-700 accent-brand-700">
+                    <div>
+                        <label for="input-flare" class="text-xs font-bold uppercase tracking-wider text-brand-950 cursor-pointer">5. Are you experiencing an active lupus flare today?</label>
+                        <p class="text-xs text-brand-800">Check this box if today marks an acute symptom spike compared to your normal baseline.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 border border-brand-200 shadow-card-purple">
+                <details class="cursor-pointer" open>
+                    <summary class="font-bold text-xs uppercase tracking-wider text-brand-950 select-none flex items-center justify-between">
+                        <span>Optional: Exercise & Physical Strain (Mechanical Impact & Overexertion)</span>
+                        <span class="text-[11px] text-brand-600 font-semibold uppercase tracking-wider">Toggle</span>
+                    </summary>
+                    <p class="text-xs text-brand-800/80 mt-2 mb-4 border-b border-brand-100 pb-2">
+                        Physical overexertion or prolonged mechanical strain is a frequent trigger for flare manifestations 24 to 48 hours later.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
+                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Activity Level</label>
+                            <select id="activity-level" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                                <option value="none">Rest / Minimal Movement</option>
+                                <option value="light">Light (Walking, gentle stretch, yoga)</option>
+                                <option value="moderate">Moderate (Brisk walk, swim, cycling)</option>
+                                <option value="high">High-Impact (Heavy resistance, HIIT, running)</option>
+                                <option value="labor">Prolonged Labor / Standing All Day</option>
+                            </select>
+                        </div>
+                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
+                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Duration (Minutes)</label>
+                            <input type="number" id="activity-minutes" value="0" min="0" step="10" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        </div>
+                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple flex items-center">
+                            <input type="checkbox" id="activity-overexertion" class="w-4 h-4 text-brand-700 focus:ring-brand-700 accent-brand-700">
+                            <label for="activity-overexertion" class="ml-2.5 text-xs font-semibold text-brand-950 cursor-pointer">Pushed joints past comfort / Overexerted</label>
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <div class="bg-white p-6 border border-brand-200 shadow-card-purple">
+                <details class="cursor-pointer" open>
+                    <summary class="font-bold text-xs uppercase tracking-wider text-brand-950 select-none flex items-center justify-between">
+                        <span>Optional: Meals & Nutrition (Auto-Parses Major Health Indicators)</span>
+                        <span class="text-[11px] text-brand-600 font-semibold uppercase tracking-wider">Toggle</span>
+                    </summary>
+                    <p class="text-xs text-brand-800/80 mt-2 mb-4 border-b border-brand-100 pb-2">
+                        Enter meals in natural language. The system analyzes meal entries to compute rolling 30-day averages across key indicators.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
+                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Breakfast</label>
+                            <input type="text" id="food-breakfast" placeholder="e.g. Oatmeal with berries and chia seeds, black coffee" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        </div>
+                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
+                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Lunch</label>
+                            <input type="text" id="food-lunch" placeholder="e.g. Turkey wrap with spinach, apple" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        </div>
+                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
+                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Dinner</label>
+                            <input type="text" id="food-dinner" placeholder="e.g. Grilled salmon, sweet potato, steamed broccoli" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        </div>
+                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
+                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Snacks, Desserts & Beverages</label>
+                            <input type="text" id="food-snacks" placeholder="e.g. Almonds, dark chocolate, herbal tea" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        </div>
+                    </div>
+                </details>
+            </div>
+
+            <button onclick="saveCurrentEntry()" class="w-full py-3.5 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition">
+                Save Check-in, Analyze Triggers & Ingest Weather
+            </button>
+        </section>
+
+        <section id="tab-analytics" class="hidden space-y-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
+                    <div class="text-[11px] uppercase font-bold text-brand-700 tracking-wider">Tracked Logs</div>
+                    <div id="metric-total-days" class="text-2xl font-bold text-brand-950 mt-1">0</div>
+                    <div class="text-[11px] text-brand-800/60 mt-1">Continuous records</div>
+                </div>
+                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
+                    <div class="text-[11px] uppercase font-bold text-brand-700 tracking-wider">Active Flare Days</div>
+                    <div id="metric-flare-days" class="text-2xl font-bold text-brand-950 mt-1">0</div>
+                    <div id="metric-flare-pct" class="text-[11px] text-brand-800/60 mt-1">0% flare incidence</div>
+                </div>
+                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
+                    <div class="text-[11px] uppercase font-bold text-brand-700 tracking-wider">Avg Daily Pain</div>
+                    <div id="metric-avg-pain" class="text-2xl font-bold text-brand-950 mt-1">0.0 / 10</div>
+                    <div class="text-[11px] text-brand-800/60 mt-1">Baseline VAS scale</div>
+                </div>
+                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
+                    <div class="text-[11px] uppercase font-bold text-brand-700 tracking-wider">48h Acute Risk</div>
+                    <div id="metric-risk" class="text-2xl font-bold text-brand-700 mt-1">15%</div>
+                    <div class="text-[11px] text-brand-800/60 mt-1">UV, delta P, strain & diet</div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 border border-brand-200 shadow-card-purple">
+                <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-1">30-Day Mean Dietary Health Indicators</h3>
+                <p class="text-xs text-brand-800/80 mb-4">Rolling average estimates across all major nutritional health metrics.</p>
+                <div class="grid grid-cols-2 md:grid-cols-6 gap-3 text-center">
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
+                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Sodium</span>
+                        <strong id="an-sodium" class="text-sm font-bold text-brand-950 block mt-1">0 mg</strong>
+                        <span class="text-[10px] text-brand-800/60">&lt; 2,000 mg</span>
+                    </div>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
+                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Cholesterol</span>
+                        <strong id="an-chol" class="text-sm font-bold text-brand-950 block mt-1">0 mg</strong>
+                        <span class="text-[10px] text-brand-800/60">&lt; 200 mg</span>
+                    </div>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
+                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Sat. Fat</span>
+                        <strong id="an-satfat" class="text-sm font-bold text-brand-950 block mt-1">0 g</strong>
+                        <span class="text-[10px] text-brand-800/60">&lt; 20 g</span>
+                    </div>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
+                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Added Sugar</span>
+                        <strong id="an-sugar" class="text-sm font-bold text-brand-950 block mt-1">0 g</strong>
+                        <span class="text-[10px] text-brand-800/60">&lt; 30 g</span>
+                    </div>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
+                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Dietary Fiber</span>
+                        <strong id="an-fiber" class="text-sm font-bold text-brand-950 block mt-1">0 g</strong>
+                        <span class="text-[10px] text-brand-800/60">&ge; 25 g</span>
+                    </div>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
+                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Potassium</span>
+                        <strong id="an-potassium" class="text-sm font-bold text-brand-950 block mt-1">0 mg</strong>
+                        <span class="text-[10px] text-brand-800/60">&ge; 2,600 mg</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-1">Multivariate Timeline Overlay</h3>
+                    <p class="text-xs text-brand-800/80 mb-3">Notice pain spikes trailing 24 to 48 hours following acute environmental, physical, or dietary stress.</p>
+                    <div id="chart-timeline" class="h-72"></div>
+                </div>
+                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-1">Time-Lagged Correlation Matrix (T-1 to T-3)</h3>
+                    <p class="text-xs text-brand-800/80 mb-3">Statistical link between prior exposures and acute pain severity.</p>
+                    <div id="chart-heatmap" class="h-72"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 border border-brand-200 shadow-card-purple">
+                <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-1">Identified Potential Flare Triggers</h3>
+                <p class="text-xs text-brand-800/80 mb-3">Calculated via Pearson correlation across environmental, physical strain, and dietary factors.</p>
+                <div class="overflow-x-auto shadow-subtle-purple">
+                    <table class="w-full text-left text-sm" id="table-triggers">
+                        <thead>
+                            <tr class="border-b border-brand-200 text-xs uppercase text-brand-800 bg-brand-50">
+                                <th class="p-3">Candidate Trigger</th>
+                                <th class="p-3">Observed Delay Window</th>
+                                <th class="p-3">Correlation Strength (r)</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-brand-100 bg-white"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="tab-clinical" class="hidden space-y-6">
+            <div class="no-print bg-brand-100 border border-brand-300 p-5 shadow-card-purple flex justify-between items-center">
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-wider text-brand-950 block">Appointment Export View</span>
+                    <p class="text-xs text-brand-800">Formatted for rapid doctor review. Includes physical exertion and dietary biomarker scorecards.</p>
+                </div>
+                <button onclick="window.print()" class="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs uppercase tracking-wider shadow-button-purple transition">
+                    Print / Export PDF
+                </button>
+            </div>
+
+            <div class="bg-white p-8 border border-brand-200 print-card shadow-elevated-purple space-y-6">
+                <div class="flex justify-between items-start border-b border-brand-200 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-brand-950 uppercase tracking-wider">Lupus Clinical Disease Activity Brief</h2>
+                        <p class="text-xs text-brand-800">Patient: <strong id="doc-patient">Jane Doe</strong> | DOB: 1988-04-12</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-semibold text-brand-900" id="doc-report-date"></p>
+                        <p class="text-xs text-brand-800/70">Monitoring Window: Past 60-90 Days</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-4 gap-4 border-b border-brand-200 pb-4 text-center">
+                    <div><span class="text-[10px] text-brand-800 font-bold uppercase block tracking-wider">Total Days Logged</span><strong id="doc-days" class="text-base font-bold text-brand-950">0</strong></div>
+                    <div><span class="text-[10px] text-brand-800 font-bold uppercase block tracking-wider">Flare Days Count</span><strong id="doc-flares" class="text-base font-bold text-brand-950">0</strong></div>
+                    <div><span class="text-[10px] text-brand-800 font-bold uppercase block tracking-wider">Mean Pain VAS</span><strong id="doc-pain" class="text-base font-bold text-brand-950">0.0</strong></div>
+                    <div><span class="text-[10px] text-brand-800 font-bold uppercase block tracking-wider">Avg Sleep</span><strong id="doc-sleep" class="text-base font-bold text-brand-950">0.0 hrs</strong></div>
+                </div>
+
+                <div class="bg-brand-50 p-4 border border-brand-200 shadow-subtle-purple">
+                    <h3 class="font-bold text-[11px] uppercase tracking-wider text-brand-900 mb-3">Major Dietary & Cardiovascular Health Indicators (30-Day Mean)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Avg Daily Sodium</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="doc-avg-sodium" class="text-sm font-bold text-brand-950">0 mg</span>
+                                <span id="badge-sodium" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &lt; 2,000 mg</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 mt-1 block">Renal & nephritis biomarker</span>
+                        </div>
+
+                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Dietary Cholesterol</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="doc-avg-cholesterol" class="text-sm font-bold text-brand-950">0 mg</span>
+                                <span id="badge-cholesterol" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &lt; 200 mg</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 mt-1 block">Arterial / steroid risk marker</span>
+                        </div>
+
+                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Saturated Fat</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="doc-avg-satfat" class="text-sm font-bold text-brand-950">0 g</span>
+                                <span id="badge-satfat" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &lt; 20 g</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 mt-1 block">Pro-inflammatory lipid load</span>
+                        </div>
+
+                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Added Sugars</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="doc-avg-sugar" class="text-sm font-bold text-brand-950">0 g</span>
+                                <span id="badge-sugar" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &lt; 30 g</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 mt-1 block">Glycemic cytokine upregulation</span>
+                        </div>
+
+                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Dietary Fiber</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="doc-avg-fiber" class="text-sm font-bold text-brand-950">0 g</span>
+                                <span id="badge-fiber" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &ge; 25 g</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 mt-1 block">Gut microbiome & immune balance</span>
+                        </div>
+
+                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Potassium</span>
+                            <div class="flex items-baseline justify-between mt-1">
+                                <span id="doc-avg-potassium" class="text-sm font-bold text-brand-950">0 mg</span>
+                                <span id="badge-potassium" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &ge; 2,600 mg</span>
+                            </div>
+                            <span class="text-[10px] text-slate-500 mt-1 block">Electrolyte & vascular balance</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-2">High-Confidence Multi-Factor Triggers (Weather, Strain & Nutrition)</h3>
+                    <ul id="doc-trigger-list" class="list-disc pl-5 text-xs text-brand-900 space-y-1"></ul>
+                </div>
+
+                <div>
+                    <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-2">Recent 14-Day Activity, Strain & Nutritional Log</h3>
+                    <div class="overflow-x-auto shadow-subtle-purple">
+                        <table class="w-full text-xs text-left border border-brand-200" id="doc-recent-table">
+                            <thead class="bg-brand-50 border-b border-brand-200 text-brand-900">
+                                <tr>
+                                    <th class="p-2 border-r border-brand-200">Date</th>
+                                    <th class="p-2 border-r border-brand-200">Pain</th>
+                                    <th class="p-2 border-r border-brand-200">Flare</th>
+                                    <th class="p-2 border-r border-brand-200">Max UV</th>
+                                    <th class="p-2 border-r border-brand-200">Δ Pressure</th>
+                                    <th class="p-2 border-r border-brand-200">Strain / Exercise</th>
+                                    <th class="p-2 border-r border-brand-200">Sodium</th>
+                                    <th class="p-2 border-r border-brand-200">Sat Fat</th>
+                                    <th class="p-2 border-r border-brand-200">Fiber</th>
+                                    <th class="p-2">Meals Logged</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-brand-100 bg-white"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="pt-8 border-t border-brand-200 flex justify-between text-xs text-brand-800">
+                    <div>Physician Signature: ___________________________________</div>
+                    <div>Date: ________________________</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        document.getElementById('input-date').valueAsDate = new Date();
+        document.getElementById('doc-report-date').innerText = new Date().toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+
+        function switchTab(tab) {
+            ['log', 'analytics', 'clinical'].forEach(t => {
+                const sec = document.getElementById(`tab-${t}`);
+                const btn = document.getElementById(`tab-btn-${t}`);
+                if (sec) sec.classList.toggle('hidden', t !== tab);
+                if (btn) {
+                    if (t === tab) {
+                        btn.className = "px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-brand-700 text-white shadow-button-purple transition";
+                    } else {
+                        btn.className = "px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-800 hover:bg-brand-50 shadow-subtle-purple transition";
+                    }
+                }
+            });
+            if (tab === 'analytics' || tab === 'clinical') refreshUI();
+        }
+
+        function getDB() {
+            return JSON.parse(localStorage.getItem('lupus_records') || '[]');
+        }
+
+        function setDB(data) {
+            localStorage.setItem('lupus_records', JSON.stringify(data));
+        }
+
+        function updateLocation() {
+            const loc = document.getElementById('input-city-state').value;
+            if (loc.trim()) {
+                document.getElementById('current-location-label').innerText = loc;
+                alert(`Location updated to ${loc}. Weather will sync using this city.`);
+            }
+        }
+
+        async function getCoordinates(query) {
+            try {
+                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    return { lat: data.results[0].latitude, lon: data.results[0].longitude };
+                }
+            } catch (e) {
+                console.warn("Geocoding fallback used.", e);
+            }
+            return { lat: 38.9615, lon: -76.7347 }; // Default Bowie, MD
+        }
+
+        // Full-Spectrum Nutritional Heuristic Engine
+        function estimateNutritionFromMeals(text) {
+            const lower = text.toLowerCase();
+            
+            let sodium = 1350; 
+            let cholesterol = 95; 
+            let satFat = 11;
+            let addedSugar = 14;
+            let fiber = 21;
+            let potassium = 2400;
+
+            if (lower.includes('bacon') || lower.includes('sausage')) { 
+                sodium += 580; cholesterol += 45; satFat += 7; 
+            }
+            if (lower.includes('egg') || lower.includes('eggs')) { 
+                cholesterol += 186; sodium += 70; satFat += 2; potassium += 70; 
+            }
+            if (lower.includes('cheese') || lower.includes('cheeseburger') || lower.includes('pizza')) { 
+                sodium += 720; cholesterol += 55; satFat += 9; 
+            }
+            if (lower.includes('fry') || lower.includes('fries') || lower.includes('chips')) { 
+                sodium += 520; satFat += 5; potassium += 320; 
+            }
+            if (lower.includes('soup') || lower.includes('ramen') || lower.includes('pho')) { 
+                sodium += 950; 
+            }
+            if (lower.includes('steak') || lower.includes('beef') || lower.includes('burger')) { 
+                sodium += 380; cholesterol += 85; satFat += 8; potassium += 350; 
+            }
+            if (lower.includes('seafood') || lower.includes('shrimp')) { 
+                cholesterol += 130; sodium += 220; 
+            }
+            if (lower.includes('fast food') || lower.includes('fried chicken')) { 
+                sodium += 1100; cholesterol += 65; satFat += 10; 
+            }
+
+            if (lower.includes('cookie') || lower.includes('cake') || lower.includes('ice cream') || lower.includes('donut') || lower.includes('candy') || lower.includes('chocolate')) { 
+                addedSugar += 28; satFat += 6; 
+            }
+            if (lower.includes('soda') || lower.includes('juice') || lower.includes('sweet tea')) { 
+                addedSugar += 32; 
+            }
+
+            if (lower.includes('salad') || lower.includes('spinach') || lower.includes('kale') || lower.includes('broccoli')) { 
+                fiber += 6; potassium += 450; sodium = Math.max(800, sodium - 150); 
+            }
+            if (lower.includes('oatmeal') || lower.includes('chia') || lower.includes('flax') || lower.includes('beans') || lower.includes('lentil')) { 
+                fiber += 8; potassium += 380; cholesterol = Math.max(40, cholesterol - 25); 
+            }
+            if (lower.includes('banana') || lower.includes('potato') || lower.includes('sweet potato') || lower.includes('avocado')) { 
+                potassium += 550; fiber += 4; 
+            }
+            if (lower.includes('berry') || lower.includes('berries') || lower.includes('apple') || lower.includes('orange')) { 
+                fiber += 4; potassium += 220; 
+            }
+
+            return {
+                sodium_mg: Math.round(sodium),
+                cholesterol_mg: Math.round(cholesterol),
+                sat_fat_g: Math.round(satFat),
+                sugar_g: Math.round(addedSugar),
+                fiber_g: Math.round(fiber),
+                potassium_mg: Math.round(potassium),
+                has_garlic: (lower.includes('garlic') || lower.includes('alfalfa')) ? 1 : 0,
+                has_alcohol: (lower.includes('wine') || lower.includes('beer') || lower.includes('cocktail') || lower.includes('liquor') || lower.includes('alcohol')) ? 1 : 0
+            };
+        }
+
+        async function saveCurrentEntry() {
+            const date = document.getElementById('input-date').value;
+            const cityQuery = document.getElementById('input-city-state').value || "Bowie, Maryland";
+
+            const coords = await getCoordinates(cityQuery);
+
+            let max_uv = 5.0, pressure_delta = 3.0;
+
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=uv_index_max&hourly=surface_pressure&timezone=auto`);
+                const weather = await res.json();
+                if (weather.daily && weather.daily.uv_index_max) max_uv = weather.daily.uv_index_max[0];
+                if (weather.hourly && weather.hourly.surface_pressure) {
+                    const p = weather.hourly.surface_pressure.slice(0, 24);
+                    pressure_delta = Math.max(...p) - Math.min(...p);
+                }
+            } catch(e) {
+                console.warn("Weather API fallback used:", e);
+            }
+
+            const meals = [
+                document.getElementById('food-breakfast').value,
+                document.getElementById('food-lunch').value,
+                document.getElementById('food-dinner').value,
+                document.getElementById('food-snacks').value
+            ].filter(Boolean).join(" | ");
+
+            const n = estimateNutritionFromMeals(meals);
+
+            // Exercise and Physical Strain
+            const actLevel = document.getElementById('activity-level').value;
+            const actMins = parseInt(document.getElementById('activity-minutes').value) || 0;
+            const overexerted = document.getElementById('activity-overexertion').checked ? 1 : 0;
+            const isStrenuous = (actLevel === 'high' || actLevel === 'labor' || overexerted === 1) ? 1 : 0;
+
+            const record = {
+                date: date,
+                pain_score: parseInt(document.getElementById('input-pain').value),
+                fatigue_score: parseInt(document.getElementById('input-fatigue').value),
+                flare_active: document.getElementById('input-flare').checked ? 1 : 0,
+                sleep_hours: parseFloat(document.getElementById('input-sleep').value) || 7.0,
+                activity_level: actLevel,
+                activity_minutes: actMins,
+                overexertion: overexerted,
+                strenuous_activity: isStrenuous,
+                meals_logged: meals || "Standard balanced meals",
+                max_uv: parseFloat(max_uv.toFixed(1)),
+                pressure_delta: parseFloat(pressure_delta.toFixed(1)),
+                sodium_mg: n.sodium_mg,
+                cholesterol_mg: n.cholesterol_mg,
+                sat_fat_g: n.sat_fat_g,
+                sugar_g: n.sugar_g,
+                fiber_g: n.fiber_g,
+                potassium_mg: n.potassium_mg,
+                garlic: n.has_garlic,
+                alcohol: n.has_alcohol
+            };
+
+            let db = getDB().filter(r => r.date !== date);
+            db.push(record);
+            db.sort((a,b) => new Date(a.date) - new Date(b.date));
+            setDB(db);
+
+            alert("Check-in saved, physical strain and nutrition analyzed, and weather synced!");
+            switchTab('analytics');
+        }
+
+        function calculatePearson(x, y) {
+            const n = x.length;
+            if (n < 4) return 0;
+            const mx = x.reduce((a, b) => a + b, 0) / n;
+            const my = y.reduce((a, b) => a + b, 0) / n;
+            let num = 0, den1 = 0, den2 = 0;
+            for (let i = 0; i < n; i++) {
+                const dx = x[i] - mx;
+                const dy = y[i] - my;
+                num += dx * dy;
+                den1 += dx * dx;
+                den2 += dy * dy;
+            }
+            return den1 && den2 ? num / Math.sqrt(den1 * den2) : 0;
+        }
+
+        function refreshUI() {
+            const db = getDB();
+            if (db.length === 0) return;
+
+            const totalDays = db.length;
+            const flareDays = db.reduce((sum, r) => sum + r.flare_active, 0);
+            const avgPain = (db.reduce((sum, r) => sum + r.pain_score, 0) / totalDays).toFixed(1);
+            const avgSleep = (db.reduce((sum, r) => sum + (r.sleep_hours || 7), 0) / totalDays).toFixed(1);
+
+            // Compute 30-Day Rolling Nutritional Averages
+            const last30 = db.slice(-30);
+            const avgSodium = Math.round(last30.reduce((sum, r) => sum + (r.sodium_mg || 1800), 0) / last30.length);
+            const avgCholesterol = Math.round(last30.reduce((sum, r) => sum + (r.cholesterol_mg || 150), 0) / last30.length);
+            const avgSatFat = Math.round(last30.reduce((sum, r) => sum + (r.sat_fat_g || 14), 0) / last30.length);
+            const avgSugar = Math.round(last30.reduce((sum, r) => sum + (r.sugar_g || 22), 0) / last30.length);
+            const avgFiber = Math.round(last30.reduce((sum, r) => sum + (r.fiber_g || 19), 0) / last30.length);
+            const avgPotassium = Math.round(last30.reduce((sum, r) => sum + (r.potassium_mg || 2400), 0) / last30.length);
+
+            // Overview Metric Cards
+            document.getElementById('metric-total-days').innerText = totalDays;
+            document.getElementById('metric-flare-days').innerText = flareDays;
+            document.getElementById('metric-flare-pct').innerText = `${((flareDays/totalDays)*100).toFixed(1)}% flare incidence`;
+            document.getElementById('metric-avg-pain').innerText = `${avgPain} / 10`;
+
+            // 48h Risk Index calculation
+            const recent = db.slice(-2);
+            let risk = 15;
+            if (recent.length >= 2) {
+                if (Math.max(...recent.map(r => r.max_uv)) >= 7) risk += 25;
+                if (Math.max(...recent.map(r => r.pressure_delta)) >= 6) risk += 20;
+                if (Math.min(...recent.map(r => r.sleep_hours)) < 5.5) risk += 15;
+                if (recent.some(r => r.strenuous_activity === 1)) risk += 20;
+                if (recent.some(r => r.garlic || r.alcohol)) risk += 10;
+            }
+            risk = Math.min(100, risk);
+            document.getElementById('metric-risk').innerText = `${risk}%`;
+
+            // Analytics Tab Nutrition Row
+            document.getElementById('an-sodium').innerText = `${avgSodium.toLocaleString()} mg`;
+            document.getElementById('an-chol').innerText = `${avgCholesterol} mg`;
+            document.getElementById('an-satfat').innerText = `${avgSatFat} g`;
+            document.getElementById('an-sugar').innerText = `${avgSugar} g`;
+            document.getElementById('an-fiber').innerText = `${avgFiber} g`;
+            document.getElementById('an-potassium').innerText = `${avgPotassium.toLocaleString()} mg`;
+
+            // Doctor Brief Header Metrics
+            document.getElementById('doc-days').innerText = totalDays;
+            document.getElementById('doc-flares').innerText = flareDays;
+            document.getElementById('doc-pain').innerText = `${avgPain} / 10`;
+            document.getElementById('doc-sleep').innerText = `${avgSleep} hrs`;
+
+            // Doctor Brief Nutritional Scorecard Values
+            document.getElementById('doc-avg-sodium').innerText = `${avgSodium.toLocaleString()} mg`;
+            document.getElementById('doc-avg-cholesterol').innerText = `${avgCholesterol} mg`;
+            document.getElementById('doc-avg-satfat').innerText = `${avgSatFat} g`;
+            document.getElementById('doc-avg-sugar').innerText = `${avgSugar} g`;
+            document.getElementById('doc-avg-fiber').innerText = `${avgFiber} g`;
+            document.getElementById('doc-avg-potassium').innerText = `${avgPotassium.toLocaleString()} mg`;
+
+            // Status Badges & Evaluation
+            function updateBadge(id, isAlert, alertText, okText) {
+                const el = document.getElementById(id);
+                if (isAlert) {
+                    el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-rose-300 bg-rose-50 text-rose-800 shadow-sm";
+                    el.innerText = alertText;
+                } else {
+                    el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-emerald-300 bg-emerald-50 text-emerald-800 shadow-sm";
+                    el.innerText = okText;
+                }
+            }
+
+            updateBadge('badge-sodium', avgSodium > 2000, "Elevated (> 2k mg)", "Within Target");
+            updateBadge('badge-cholesterol', avgCholesterol > 200, "Elevated (> 200 mg)", "Within Target");
+            updateBadge('badge-satfat', avgSatFat > 20, "Elevated (> 20 g)", "Within Target");
+            updateBadge('badge-sugar', avgSugar > 30, "High (> 30 g)", "Within Target");
+            updateBadge('badge-fiber', avgFiber < 25, "Low (< 25 g)", "Optimal");
+            updateBadge('badge-potassium', avgPotassium < 2600, "Low (< 2.6k mg)", "Balanced");
+
+            // Timeline Overlay Plot with Purple/Violet Spectrum
+            Plotly.newPlot('chart-timeline', [
+                { x: db.map(r => r.date), y: db.map(r => r.pain_score), name: 'Pain VAS', line: { color: '#5C4879', width: 2.5 } },
+                { x: db.map(r => r.date), y: db.map(r => r.fatigue_score), name: 'Fatigue', line: { color: '#AA98C2', width: 1.5 } },
+                { x: db.map(r => r.date), y: db.map(r => r.max_uv), name: 'Max UV', line: { color: '#725C93', dash: 'dot' } }
+            ], { 
+                margin: { l: 25, r: 15, t: 10, b: 30 }, 
+                height: 260,
+                legend: { orientation: 'h', y: 1.15, x: 0 },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent'
+            });
+
+            // Time-Lagged Cross-Correlation Matrix (Weather, Physical Strain & Diet)
+            const features = ['max_uv', 'pressure_delta', 'strenuous_activity', 'sodium_mg', 'sat_fat_g', 'garlic', 'alcohol'];
+            const labels = ['Max UV', 'Δ Pressure', 'Physical Overexertion', 'Sodium (mg)', 'Saturated Fat', 'Garlic/Alfalfa', 'Alcohol'];
+            const corrMatrix = [];
+            const triggerResults = [];
+
+            features.forEach((feat, idx) => {
+                const row = [];
+                for (let lag = 1; lag <= 3; lag++) {
+                    const x = [], y = [];
+                    for (let i = lag; i < db.length; i++) {
+                        x.push(db[i - lag][feat] || 0);
+                        y.push(db[i].pain_score);
+                    }
+                    const r = calculatePearson(x, y);
+                    row.push(parseFloat(r.toFixed(2)));
+                    triggerResults.push({ feature: labels[idx], lag: `${lag} day(s) prior`, r: r });
+                }
+                corrMatrix.push(row);
+            });
+
+            Plotly.newPlot('chart-heatmap', [{
+                z: corrMatrix,
+                x: ['T-1 Day', 'T-2 Days', 'T-3 Days'],
+                y: labels,
+                type: 'heatmap',
+                colorscale: [
+                    [0, '#F9F8FC'],
+                    [0.5, '#C8BCD8'],
+                    [1, '#4A3962']
+                ]
+            }], { 
+                margin: { l: 130, r: 15, t: 10, b: 30 }, 
+                height: 260,
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent'
+            });
+
+            // Triggers Table
+            triggerResults.sort((a,b) => b.r - a.r);
+            const tBody = document.querySelector('#table-triggers tbody');
+            tBody.innerHTML = '';
+            triggerResults.slice(0, 5).forEach(t => {
+                tBody.innerHTML += `
+                    <tr class="border-b border-brand-100 hover:bg-brand-50/50">
+                        <td class="p-3 font-semibold text-brand-950">${t.feature}</td>
+                        <td class="p-3 text-brand-800">${t.lag}</td>
+                        <td class="p-3 font-bold ${t.r > 0.25 ? 'text-brand-800' : 'text-slate-600'}">
+                            ${t.r > 0 ? '+' : ''}${t.r.toFixed(2)}
+                        </td>
+                    </tr>`;
+            });
+
+            // Doctor Brief Triggers List
+            const docTriggerList = document.getElementById('doc-trigger-list');
+            docTriggerList.innerHTML = '';
+            triggerResults.slice(0, 3).forEach(t => {
+                docTriggerList.innerHTML += `<li>Pain correlates with <strong>${t.feature}</strong> at a <strong>${t.lag}</strong> window (r = ${t.r.toFixed(2)}).</li>`;
+            });
+
+            const strenuousCount = db.filter(r => r.strenuous_activity === 1).length;
+            if (strenuousCount > 0) {
+                docTriggerList.innerHTML += `<li>Physical Strain: Strenuous activity or overexertion reported on <strong>${strenuousCount}</strong> logged day(s).</li>`;
+            }
+            if (avgSodium > 2000) {
+                docTriggerList.innerHTML += `<li>30-day mean sodium (<strong>${avgSodium.toLocaleString()} mg/day</strong>) exceeds standard nephritis prevention targets (< 2,000 mg).</li>`;
+            }
+
+            // Doctor Brief 14-Day Table with Exercise
+            const docRecentTable = document.querySelector('#doc-recent-table tbody');
+            docRecentTable.innerHTML = '';
+            db.slice(-14).reverse().forEach(r => {
+                let actDisplay = "Rest";
+                if (r.activity_level === 'light') actDisplay = "Light (" + r.activity_minutes + "m)";
+                else if (r.activity_level === 'moderate') actDisplay = "Mod (" + r.activity_minutes + "m)";
+                else if (r.activity_level === 'high') actDisplay = "High (" + r.activity_minutes + "m)";
+                else if (r.activity_level === 'labor') actDisplay = "Labor (" + r.activity_minutes + "m)";
+                if (r.overexertion) actDisplay += " [Overexerted]";
+
+                docRecentTable.innerHTML += `
+                    <tr class="hover:bg-brand-50/40">
+                        <td class="p-2 border-r border-brand-100 font-medium">${r.date}</td>
+                        <td class="p-2 border-r border-brand-100 font-bold text-brand-900">${r.pain_score}</td>
+                        <td class="p-2 border-r border-brand-100">${r.flare_active ? '<span class="text-rose-700 font-bold">Yes</span>' : 'No'}</td>
+                        <td class="p-2 border-r border-brand-100">${r.max_uv}</td>
+                        <td class="p-2 border-r border-brand-100">${r.pressure_delta}</td>
+                        <td class="p-2 border-r border-brand-100 font-semibold text-brand-800">${actDisplay}</td>
+                        <td class="p-2 border-r border-brand-100">${r.sodium_mg ? r.sodium_mg.toLocaleString() + ' mg' : '-'}</td>
+                        <td class="p-2 border-r border-brand-100">${r.sat_fat_g ? r.sat_fat_g + ' g' : '-'}</td>
+                        <td class="p-2 border-r border-brand-100">${r.fiber_g ? r.fiber_g + ' g' : '-'}</td>
+                        <td class="p-2 truncate max-w-xs text-slate-600">${r.meals_logged || '-'}</td>
+                    </tr>`;
+            });
+        }
+
+        // Mock 60-Day Sample Data Seeder with Weather, Exercise & Nutrition
+        function seedMockData() {
+            const data = [];
+            const today = new Date();
+            for (let i = 59; i >= 0; i--) {
+                const dt = new Date();
+                dt.setDate(today.getDate() - i);
+                const dtStr = dt.toISOString().split('T')[0];
+
+                const uv = parseFloat((Math.random() * 8 + 2).toFixed(1));
+                const pDelta = parseFloat((Math.random() * 8 + 1).toFixed(1));
+                const garlic = Math.random() > 0.85 ? 1 : 0;
+                const alcohol = Math.random() > 0.8 ? 1 : 0;
+                const sleep = parseFloat((Math.random() * 3 + 5.5).toFixed(1));
+
+                // Simulated Exercise & Physical Strain
+                const actRoll = Math.random();
+                let actLevel = "none";
+                let actMins = 0;
+                let overexert = 0;
+                if (actRoll > 0.75) { actLevel = "high"; actMins = 60; overexert = 1; }
+                else if (actRoll > 0.5) { actLevel = "moderate"; actMins = 45; }
+                else if (actRoll > 0.25) { actLevel = "light"; actMins = 30; }
+
+                const isStrenuous = (actLevel === 'high' || overexert === 1) ? 1 : 0;
+
+                // Simulated full-spectrum nutrients
+                const sodium = Math.round(Math.random() * 1600 + 1500);
+                const cholesterol = Math.round(Math.random() * 250 + 110);
+                const satFat = Math.round(Math.random() * 18 + 10);
+                const sugar = Math.round(Math.random() * 32 + 12);
+                const fiber = Math.round(Math.random() * 16 + 14);
+                const potassium = Math.round(Math.random() * 1400 + 2000);
+
+                // Multi-factor causal lag generation (T-2 days)
+                let pain = Math.floor(Math.random() * 3) + 2;
+                if (i <= 57 && (data[data.length - 2]?.max_uv > 7.5 || data[data.length - 2]?.strenuous_activity === 1 || data[data.length - 2]?.garlic === 1)) {
+                    pain += 5;
+                }
+                pain = Math.min(10, pain);
+
+                let mealDesc = "Oatmeal with berries, turkey avocado wrap, grilled salmon with broccoli";
+                if (garlic) mealDesc = "Garlic pasta, caesar salad, garlic bread";
+                else if (alcohol) mealDesc = "Steak dinner, baked potato with butter, 2 glasses wine";
+                else if (sodium > 2600) mealDesc = "Double cheeseburger, french fries, soda";
+
+                data.push({
+                    date: dtStr,
+                    pain_score: pain,
+                    fatigue_score: Math.min(10, pain + Math.floor(Math.random() * 2)),
+                    flare_active: pain >= 6 ? 1 : 0,
+                    sleep_hours: sleep,
+                    activity_level: actLevel,
+                    activity_minutes: actMins,
+                    overexertion: overexert,
+                    strenuous_activity: isStrenuous,
+                    meals_logged: mealDesc,
+                    max_uv: uv,
+                    pressure_delta: pDelta,
+                    sodium_mg: sodium,
+                    cholesterol_mg: cholesterol,
+                    sat_fat_g: satFat,
+                    sugar_g: sugar,
+                    fiber_g: fiber,
+                    potassium_mg: potassium,
+                    garlic: garlic,
+                    alcohol: alcohol
+                });
+            }
+            setDB(data);
+            alert("Loaded 60 days of clinical sample data with Exercise & Nutrition!");
+            switchTab('analytics');
+        }
+
+        function clearAllData() {
+            if (confirm("Reset all stored records?")) {
+                localStorage.removeItem('lupus_records');
+                location.reload();
+            }
+        }
+
+        if (getDB().length > 0) refreshUI();
+    </script>
+</body>
+</html>
