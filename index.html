@@ -207,14 +207,14 @@
                 localStorage.setItem('lupus_active_user', JSON.stringify({ name: newUser.name, email: newUser.email, isGuest: false }));
                 
                 showAlert("Account created successfully. Loading dashboard...", false);
-                setTimeout(() => { window.location.href = "index.html"; }, 800);
+                setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 800);
             } else {
                 // Login Logic
                 const user = accounts.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
                 if (user) {
                     localStorage.setItem('lupus_active_user', JSON.stringify({ name: user.name, email: user.email, isGuest: false }));
                     showAlert("Authentication verified. Redirecting...", false);
-                    setTimeout(() => { window.location.href = "index.html"; }, 600);
+                    setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 600);
                 } else {
                     showAlert("Invalid email address or password. Try registering or sign in as Demo Guest.");
                 }
@@ -298,7 +298,7 @@
                 localStorage.setItem('lupus_records', JSON.stringify(data));
             }
 
-            window.location.href = "index.html";
+            window.location.href = "tracking_analytics.html"
         }
     </script>
 </body>
