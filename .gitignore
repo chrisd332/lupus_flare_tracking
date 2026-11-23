@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Local SQLite Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary / Duplicate Text Exports
+text_files/
+
+# Environment & OS
+.env
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -39,8 +39,10 @@
     <style>
         @media print {
             .no-print { display: none !important; }
-            body { background: white !important; font-size: 10.5pt; color: #1e1b4b !important; }
-            .print-card { border: 1px solid #c8bcd8 !important; break-inside: avoid; box-shadow: none !important; }
+            body { background: #FFFFFF !important; font-size: 10pt; color: #231A30 !important; }
+            .print-card { border: 1px solid #C8BCD8 !important; break-inside: avoid; box-shadow: none !important; padding: 16px !important; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
         }
     </style>
 </head>
@@ -49,137 +51,150 @@
     <header class="bg-white border-b border-brand-200 shadow-card-purple no-print">
         <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 border border-brand-400 bg-brand-100 flex items-center justify-center font-bold text-xs text-brand-900 tracking-wider uppercase shadow-subtle-purple">
+                <div class="w-10 h-10 rounded-lg border border-brand-400 bg-brand-100 flex items-center justify-center font-bold text-xs text-brand-900 tracking-wider uppercase shadow-subtle-purple">
                     LFT
                 </div>
                 <div>
                     <h1 class="text-lg font-bold text-brand-950 tracking-tight leading-tight">Lupus Flare Tracker & Early Warning Engine</h1>
-                    <p class="text-xs text-brand-700">Environmental Triggers, Physical Strain & Dietary Analytics</p>
+                    <p class="text-xs text-brand-800">Environmental Triggers, Physical Strain & Dietary Analytics</p>
                 </div>
             </div>
-            <!-- Top Right Actions & User Account Status -->
-            <div class="flex items-center space-x-2">
-                <!-- Active User Display Badge -->
-                <span id="user-display-chip" class="px-3 py-1.5 text-xs font-semibold text-brand-900 bg-brand-100 border border-brand-300 shadow-subtle-purple">
+
+            <div class="flex flex-wrap items-center gap-2">
+                <span id="user-display-chip" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-brand-900 bg-brand-100 border border-brand-300 shadow-subtle-purple">
                     Patient Account
                 </span>
 
-                <!-- Sign Out Button -->
-                <button onclick="signOutUser()" class="px-3.5 py-1.5 text-xs font-semibold text-brand-800 bg-white hover:bg-brand-50 border border-brand-300 shadow-subtle-purple transition">
-                    Sign Out
+                <button type="button" onclick="exportUserCSV()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-brand-900 bg-white hover:bg-brand-50 border border-brand-300 shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+                    Export CSV
                 </button>
 
-                <!-- Existing Action Buttons -->
-                <button onclick="seedMockData()" class="px-3.5 py-1.5 text-xs font-semibold text-brand-800 bg-brand-50 hover:bg-brand-100 border border-brand-300 shadow-subtle-purple transition">
+                <button type="button" onclick="seedMockData()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-brand-900 bg-brand-50 hover:bg-brand-100 border border-brand-300 shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                     Load 60-Day Sample Data
                 </button>
-                <button onclick="clearAllData()" class="px-3.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-subtle-purple transition">
-                    Reset Database
+
+                <button type="button" id="btn-reset-db" onclick="handleResetClick()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500">
+                    Reset Account Data
+                </button>
+
+                <button type="button" onclick="signOutUser()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-brand-900 bg-white hover:bg-brand-50 border border-brand-300 shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+                    Sign Out
                 </button>
             </div>
         </div>
     </header>
 
     <div class="max-w-6xl mx-auto px-4 py-6">
-        <div class="flex space-x-2 border-b border-brand-200 pb-3 mb-6 no-print">
-            <button onclick="switchTab('log')" id="tab-btn-log" class="px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-brand-700 text-white shadow-button-purple transition">
+        <!-- Non-Blocking Global Status Banner -->
+        <div id="status-banner" role="status" aria-live="polite" class="hidden mb-5 p-3.5 border rounded-lg text-xs font-semibold flex justify-between items-center no-print">
+            <span id="status-banner-text"></span>
+            <button type="button" onclick="hideStatusBanner()" aria-label="Dismiss notification" class="ml-4 text-xs font-bold uppercase tracking-wider opacity-75 hover:opacity-100">Dismiss</button>
+        </div>
+
+        <!-- Accessible Tab Bar -->
+        <div role="tablist" aria-label="Dashboard sections" class="flex flex-wrap gap-2 border-b border-brand-200 pb-3 mb-6 no-print">
+            <button type="button" role="tab" aria-selected="true" aria-controls="tab-log" onclick="switchTab('log')" id="tab-btn-log" class="px-5 py-2.5 rounded-lg font-semibold text-xs uppercase tracking-wider bg-brand-700 text-white shadow-button-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                 Daily Check-in
             </button>
-            <button onclick="switchTab('analytics')" id="tab-btn-analytics" class="px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-800 hover:bg-brand-50 shadow-subtle-purple transition">
+            <button type="button" role="tab" aria-selected="false" aria-controls="tab-analytics" onclick="switchTab('analytics')" id="tab-btn-analytics" class="px-5 py-2.5 rounded-lg font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-900 hover:bg-brand-50 shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                 Predictive Analytics & Triggers
             </button>
-            <button onclick="switchTab('clinical')" id="tab-btn-clinical" class="px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-800 hover:bg-brand-50 shadow-subtle-purple transition">
+            <button type="button" role="tab" aria-selected="false" aria-controls="tab-clinical" onclick="switchTab('clinical')" id="tab-btn-clinical" class="px-5 py-2.5 rounded-lg font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-900 hover:bg-brand-50 shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                 Doctor's Clinical Brief
             </button>
         </div>
 
-        <section id="tab-log" class="space-y-6">
-            <div class="bg-white p-5 border border-brand-200 shadow-card-purple flex flex-wrap items-center justify-between gap-4">
+        <!-- ========================================================= -->
+        <!-- TAB 1: DAILY CHECK-IN                                     -->
+        <!-- ========================================================= -->
+        <section id="tab-log" role="tabpanel" aria-labelledby="tab-btn-log" class="space-y-6">
+            <div class="bg-white p-5 border border-brand-200 rounded-xl shadow-card-purple flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center space-x-3">
-                    <span class="text-xs font-bold text-brand-800 uppercase tracking-widest px-2.5 py-1.5 bg-brand-100 border border-brand-300 shadow-sm">Location</span>
+                    <span class="text-xs font-bold text-brand-900 uppercase tracking-widest px-2.5 py-1.5 rounded bg-brand-100 border border-brand-300">Location</span>
                     <div>
-                        <span class="text-[11px] uppercase font-bold text-brand-700 tracking-wider block">Automated Weather Station</span>
+                        <span class="text-[11px] uppercase font-bold text-brand-800 tracking-wider block">Automated Weather Station</span>
                         <div class="text-sm font-bold text-brand-950" id="current-location-label">Bowie, Maryland</div>
                     </div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <input type="text" id="input-city-state" value="Bowie, Maryland" placeholder="City, State" class="border border-brand-300 px-3 py-1.5 text-sm w-64 shadow-inner focus:border-brand-600 outline-none">
-                    <button onclick="updateLocation()" class="px-3.5 py-1.5 bg-brand-100 hover:bg-brand-200 border border-brand-300 text-xs font-bold text-brand-800 uppercase tracking-wider shadow-subtle-purple transition">
+                    <label for="input-city-state" class="sr-only">City and State</label>
+                    <input type="text" id="input-city-state" value="Bowie, Maryland" placeholder="City, State" class="border border-brand-300 rounded-lg px-3 py-1.5 text-sm w-64 bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                    <button type="button" onclick="updateLocation()" class="px-3.5 py-1.5 rounded-lg bg-brand-100 hover:bg-brand-200 border border-brand-300 text-xs font-bold text-brand-900 uppercase tracking-wider shadow-subtle-purple transition">
                         Update City
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white p-6 border border-brand-200 shadow-card-purple space-y-6">
-                <div class="border-b border-brand-100 pb-3 flex justify-between items-center">
+            <div class="bg-white p-6 border border-brand-200 rounded-xl shadow-card-purple space-y-6">
+                <div class="border-b border-brand-100 pb-3 flex flex-wrap justify-between items-center gap-2">
                     <div>
                         <h2 class="text-sm font-bold uppercase tracking-wider text-brand-950">Daily Flare Check-In</h2>
-                        <p class="text-xs text-brand-700/80">Sub-minute check-in designed to monitor disease activity without user fatigue.</p>
+                        <p class="text-xs text-brand-800">Sub-minute check-in designed to monitor disease activity without user fatigue.</p>
                     </div>
-                    <span class="text-[11px] font-bold text-brand-800 bg-brand-100 px-3 py-1 border border-brand-300 shadow-sm uppercase tracking-wider">5 Questions</span>
+                    <span class="text-[11px] font-bold text-brand-900 bg-brand-100 px-3 py-1 rounded-full border border-brand-300 uppercase tracking-wider">5 Questions</span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="bg-brand-50/50 p-4 border border-brand-100 shadow-subtle-purple">
-                        <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">1. Date</label>
-                        <input type="date" id="input-date" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                    <div class="bg-brand-50/50 p-4 border border-brand-100 rounded-lg shadow-subtle-purple">
+                        <label for="input-date" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">1. Date</label>
+                        <input type="date" id="input-date" class="w-full border border-brand-300 rounded-lg p-2 text-sm bg-white focus:border-brand-600 outline-none">
                     </div>
 
-                    <div class="bg-brand-50/50 p-4 border border-brand-100 shadow-subtle-purple">
-                        <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">2. Sleep Duration (Last Night)</label>
-                        <input type="number" step="0.5" id="input-sleep" value="7.5" min="0" max="24" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
-                        <span class="text-[11px] text-brand-800/60 mt-1 block">Total estimated hours of restorative sleep</span>
+                    <div class="bg-brand-50/50 p-4 border border-brand-100 rounded-lg shadow-subtle-purple">
+                        <label for="input-sleep" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">2. Sleep Duration (Last Night)</label>
+                        <input type="number" step="0.5" id="input-sleep" value="7.5" min="0" max="24" class="w-full border border-brand-300 rounded-lg p-2 text-sm bg-white focus:border-brand-600 outline-none">
+                        <span class="text-[11px] text-brand-900/70 mt-1 block">Total estimated hours of restorative sleep</span>
                     </div>
 
-                    <div class="bg-brand-50/50 p-4 border border-brand-100 shadow-subtle-purple">
+                    <div class="bg-brand-50/50 p-4 border border-brand-100 rounded-lg shadow-subtle-purple">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="text-xs font-bold text-brand-900 uppercase tracking-wider">3. Joint & Body Pain Level</label>
-                            <span id="label-pain" class="text-xs font-bold text-brand-900 bg-white px-2.5 py-0.5 border border-brand-300 shadow-sm">3 / 10</span>
+                            <label for="input-pain" class="text-xs font-bold text-brand-900 uppercase tracking-wider">3. Joint & Body Pain Level</label>
+                            <span id="label-pain" class="text-xs font-bold text-brand-950 bg-white px-2.5 py-0.5 rounded border border-brand-300">3 / 10</span>
                         </div>
                         <input type="range" id="input-pain" min="0" max="10" value="3" class="w-full h-1.5 bg-brand-200 appearance-none cursor-pointer accent-brand-700" oninput="document.getElementById('label-pain').innerText = this.value + ' / 10'">
-                        <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                        <div class="flex justify-between text-[11px] text-slate-600 mt-1">
                             <span>0 (No Pain)</span>
                             <span>5 (Moderate)</span>
-                            <span>10 (Severe / Bedridden)</span>
+                            <span>10 (Severe)</span>
                         </div>
                     </div>
 
-                    <div class="bg-brand-50/50 p-4 border border-brand-100 shadow-subtle-purple">
+                    <div class="bg-brand-50/50 p-4 border border-brand-100 rounded-lg shadow-subtle-purple">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="text-xs font-bold text-brand-900 uppercase tracking-wider">4. Fatigue / Energy Depletion</label>
-                            <span id="label-fatigue" class="text-xs font-bold text-amber-900 bg-amber-50 px-2.5 py-0.5 border border-amber-300 shadow-sm">4 / 10</span>
+                            <label for="input-fatigue" class="text-xs font-bold text-brand-900 uppercase tracking-wider">4. Fatigue / Energy Depletion</label>
+                            <span id="label-fatigue" class="text-xs font-bold text-amber-950 bg-amber-50 px-2.5 py-0.5 rounded border border-amber-300">4 / 10</span>
                         </div>
                         <input type="range" id="input-fatigue" min="0" max="10" value="4" class="w-full h-1.5 bg-brand-200 appearance-none cursor-pointer accent-amber-600" oninput="document.getElementById('label-fatigue').innerText = this.value + ' / 10'">
-                        <div class="flex justify-between text-[11px] text-slate-500 mt-1">
+                        <div class="flex justify-between text-[11px] text-slate-600 mt-1">
                             <span>0 (Full Energy)</span>
                             <span>5 (Sluggish)</span>
-                            <span>10 (Debilitating Exhaustion)</span>
+                            <span>10 (Severe Fatigue)</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="p-4 bg-brand-100/70 border border-brand-300 shadow-subtle-purple flex items-center space-x-3">
+                <div class="p-4 bg-brand-100/70 border border-brand-300 rounded-lg shadow-subtle-purple flex items-center space-x-3">
                     <input type="checkbox" id="input-flare" class="w-4 h-4 text-brand-700 focus:ring-brand-700 accent-brand-700">
                     <div>
                         <label for="input-flare" class="text-xs font-bold uppercase tracking-wider text-brand-950 cursor-pointer">5. Are you experiencing an active lupus flare today?</label>
-                        <p class="text-xs text-brand-800">Check this box if today marks an acute symptom spike compared to your normal baseline.</p>
+                        <p class="text-xs text-brand-900/80">Check this box if today marks an acute symptom spike compared to your normal baseline.</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white p-6 border border-brand-200 shadow-card-purple">
+            <div class="bg-white p-6 border border-brand-200 rounded-xl shadow-card-purple">
                 <details class="cursor-pointer" open>
                     <summary class="font-bold text-xs uppercase tracking-wider text-brand-950 select-none flex items-center justify-between">
                         <span>Optional: Exercise & Physical Strain (Mechanical Impact & Overexertion)</span>
-                        <span class="text-[11px] text-brand-600 font-semibold uppercase tracking-wider">Toggle</span>
+                        <span class="text-[11px] text-brand-700 font-semibold uppercase tracking-wider">Toggle</span>
                     </summary>
-                    <p class="text-xs text-brand-800/80 mt-2 mb-4 border-b border-brand-100 pb-2">
+                    <p class="text-xs text-brand-900/80 mt-2 mb-4 border-b border-brand-100 pb-2">
                         Physical overexertion or prolonged mechanical strain is a frequent trigger for flare manifestations 24 to 48 hours later.
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
-                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Activity Level</label>
-                            <select id="activity-level" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        <div class="p-3 bg-brand-50 border border-brand-100 rounded-lg">
+                            <label for="activity-level" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Activity Level</label>
+                            <select id="activity-level" class="w-full border border-brand-300 rounded-lg p-2 text-sm bg-white focus:border-brand-600 outline-none">
                                 <option value="none">Rest / Minimal Movement</option>
                                 <option value="light">Light (Walking, gentle stretch, yoga)</option>
                                 <option value="moderate">Moderate (Brisk walk, swim, cycling)</option>
@@ -187,11 +202,11 @@
                                 <option value="labor">Prolonged Labor / Standing All Day</option>
                             </select>
                         </div>
-                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
-                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Duration (Minutes)</label>
-                            <input type="number" id="activity-minutes" value="0" min="0" step="10" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        <div class="p-3 bg-brand-50 border border-brand-100 rounded-lg">
+                            <label for="activity-minutes" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Duration (Minutes)</label>
+                            <input type="number" id="activity-minutes" value="0" min="0" step="10" class="w-full border border-brand-300 rounded-lg p-2 text-sm bg-white focus:border-brand-600 outline-none">
                         </div>
-                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple flex items-center">
+                        <div class="p-3 bg-brand-50 border border-brand-100 rounded-lg flex items-center">
                             <input type="checkbox" id="activity-overexertion" class="w-4 h-4 text-brand-700 focus:ring-brand-700 accent-brand-700">
                             <label for="activity-overexertion" class="ml-2.5 text-xs font-semibold text-brand-950 cursor-pointer">Pushed joints past comfort / Overexerted</label>
                         </div>
@@ -199,122 +214,138 @@
                 </details>
             </div>
 
-            <div class="bg-white p-6 border border-brand-200 shadow-card-purple">
+            <div class="bg-white p-6 border border-brand-200 rounded-xl shadow-card-purple">
                 <details class="cursor-pointer" open>
                     <summary class="font-bold text-xs uppercase tracking-wider text-brand-950 select-none flex items-center justify-between">
                         <span>Optional: Meals & Nutrition (Auto-Parses Major Health Indicators)</span>
-                        <span class="text-[11px] text-brand-600 font-semibold uppercase tracking-wider">Toggle</span>
+                        <span class="text-[11px] text-brand-700 font-semibold uppercase tracking-wider">Toggle</span>
                     </summary>
-                    <p class="text-xs text-brand-800/80 mt-2 mb-4 border-b border-brand-100 pb-2">
-                        Enter meals in natural language. The system analyzes meal entries to compute rolling 30-day averages across key indicators.
+                    <p class="text-xs text-brand-900/80 mt-2 mb-4 border-b border-brand-100 pb-2">
+                        Enter meals in natural language. Leave blank if not logging meals today; entered foods compute rolling 30-day nutritional estimates.
                     </p>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
-                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Breakfast</label>
-                            <input type="text" id="food-breakfast" placeholder="e.g. Oatmeal with berries and chia seeds, black coffee" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        <div class="p-3 bg-brand-50 border border-brand-100 rounded-lg">
+                            <label for="food-breakfast" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Breakfast</label>
+                            <input type="text" id="food-breakfast" placeholder="e.g. Oatmeal with berries and chia seeds, black coffee" class="w-full border border-brand-300 rounded-lg p-2 text-sm bg-white focus:border-brand-600 outline-none">
                         </div>
-                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
-                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Lunch</label>
-                            <input type="text" id="food-lunch" placeholder="e.g. Turkey wrap with spinach, apple" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        <div class="p-3 bg-brand-50 border border-brand-100 rounded-lg">
+                            <label for="food-lunch" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Lunch</label>
+                            <input type="text" id="food-lunch" placeholder="e.g. Turkey wrap with spinach, apple" class="w-full border border-brand-300 rounded-lg p-2 text-sm bg-white focus:border-brand-600 outline-none">
                         </div>
-                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
-                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Dinner</label>
-                            <input type="text" id="food-dinner" placeholder="e.g. Grilled salmon, sweet potato, steamed broccoli" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        <div class="p-3 bg-brand-50 border border-brand-100 rounded-lg">
+                            <label for="food-dinner" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Dinner</label>
+                            <input type="text" id="food-dinner" placeholder="e.g. Grilled salmon, sweet potato, steamed broccoli" class="w-full border border-brand-300 rounded-lg p-2 text-sm bg-white focus:border-brand-600 outline-none">
                         </div>
-                        <div class="p-3 bg-brand-50 border border-brand-100 shadow-subtle-purple">
-                            <label class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Snacks, Desserts & Beverages</label>
-                            <input type="text" id="food-snacks" placeholder="e.g. Almonds, dark chocolate, herbal tea" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                        <div class="p-3 bg-brand-50 border border-brand-100 rounded-lg">
+                            <label for="food-snacks" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Snacks, Desserts & Beverages</label>
+                            <input type="text" id="food-snacks" placeholder="e.g. Almonds, dark chocolate, herbal tea" class="w-full border border-brand-300 rounded-lg p-2 text-sm bg-white focus:border-brand-600 outline-none">
                         </div>
                     </div>
                 </details>
             </div>
 
-            <button onclick="saveCurrentEntry()" class="w-full py-3.5 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition">
+            <button type="button" onclick="saveCurrentEntry()" class="w-full py-3.5 bg-brand-700 hover:bg-brand-800 rounded-xl text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                 Save Check-in, Analyze Triggers & Ingest Weather
             </button>
         </section>
 
-        <section id="tab-analytics" class="hidden space-y-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
-                    <div class="text-[11px] uppercase font-bold text-brand-700 tracking-wider">Tracked Logs</div>
-                    <div id="metric-total-days" class="text-2xl font-bold text-brand-950 mt-1">0</div>
-                    <div class="text-[11px] text-brand-800/60 mt-1">Continuous records</div>
-                </div>
-                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
-                    <div class="text-[11px] uppercase font-bold text-brand-700 tracking-wider">Active Flare Days</div>
-                    <div id="metric-flare-days" class="text-2xl font-bold text-brand-950 mt-1">0</div>
-                    <div id="metric-flare-pct" class="text-[11px] text-brand-800/60 mt-1">0% flare incidence</div>
-                </div>
-                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
-                    <div class="text-[11px] uppercase font-bold text-brand-700 tracking-wider">Avg Daily Pain</div>
-                    <div id="metric-avg-pain" class="text-2xl font-bold text-brand-950 mt-1">0.0 / 10</div>
-                    <div class="text-[11px] text-brand-800/60 mt-1">Baseline VAS scale</div>
-                </div>
-                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
-                    <div class="text-[11px] uppercase font-bold text-brand-700 tracking-wider">48h Acute Risk</div>
-                    <div id="metric-risk" class="text-2xl font-bold text-brand-700 mt-1">15%</div>
-                    <div class="text-[11px] text-brand-800/60 mt-1">UV, delta P, strain & diet</div>
+        <!-- ========================================================= -->
+        <!-- TAB 2: PREDICTIVE ANALYTICS & TRIGGERS                    -->
+        <!-- ========================================================= -->
+        <section id="tab-analytics" role="tabpanel" aria-labelledby="tab-btn-analytics" class="hidden space-y-6">
+            <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-4 border border-brand-200 rounded-xl shadow-subtle-purple">
+                <span class="text-xs font-bold uppercase tracking-wider text-brand-900">Longitudinal Analytics Overview</span>
+                <div class="flex items-center space-x-2">
+                    <label for="analytics-window" class="text-xs font-semibold text-brand-800">Window:</label>
+                    <select id="analytics-window" onchange="refreshUI()" class="border border-brand-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-brand-950 bg-white outline-none">
+                        <option value="all">All Logged Days</option>
+                        <option value="60">Last 60 Days</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="14">Last 14 Days</option>
+                    </select>
                 </div>
             </div>
 
-            <div class="bg-white p-6 border border-brand-200 shadow-card-purple">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 border border-brand-200 rounded-xl shadow-card-purple">
+                    <div class="text-[11px] uppercase font-bold text-brand-800 tracking-wider">Tracked Logs</div>
+                    <div id="metric-total-days" class="text-2xl font-bold text-brand-950 mt-1">0</div>
+                    <div class="text-[11px] text-brand-800/75 mt-1">Continuous records</div>
+                </div>
+                <div class="bg-white p-5 border border-brand-200 rounded-xl shadow-card-purple">
+                    <div class="text-[11px] uppercase font-bold text-brand-800 tracking-wider">Active Flare Days</div>
+                    <div id="metric-flare-days" class="text-2xl font-bold text-brand-950 mt-1">0</div>
+                    <div id="metric-flare-pct" class="text-[11px] text-brand-800/75 mt-1">0% flare incidence</div>
+                </div>
+                <div class="bg-white p-5 border border-brand-200 rounded-xl shadow-card-purple">
+                    <div class="text-[11px] uppercase font-bold text-brand-800 tracking-wider">Avg Daily Pain</div>
+                    <div id="metric-avg-pain" class="text-2xl font-bold text-brand-950 mt-1">0.0 / 10</div>
+                    <div class="text-[11px] text-brand-800/75 mt-1">Baseline VAS scale</div>
+                </div>
+                <div class="bg-white p-5 border border-brand-200 rounded-xl shadow-card-purple">
+                    <div class="text-[11px] uppercase font-bold text-brand-800 tracking-wider">48h Acute Risk</div>
+                    <div id="metric-risk" class="text-2xl font-bold text-brand-800 mt-1">15%</div>
+                    <div class="text-[11px] text-brand-800/75 mt-1">UV, Δ pressure, strain & diet</div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 border border-brand-200 rounded-xl shadow-card-purple">
                 <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-1">30-Day Mean Dietary Health Indicators</h3>
-                <p class="text-xs text-brand-800/80 mb-4">Rolling average estimates across all major nutritional health metrics.</p>
+                <p class="text-xs text-brand-800 mb-4">Rolling average estimates across logged meal entries.</p>
                 <div class="grid grid-cols-2 md:grid-cols-6 gap-3 text-center">
-                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
-                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Sodium</span>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 rounded-lg">
+                        <span class="text-[10px] uppercase font-bold text-brand-900 block tracking-wider">Sodium</span>
                         <strong id="an-sodium" class="text-sm font-bold text-brand-950 block mt-1">0 mg</strong>
-                        <span class="text-[10px] text-brand-800/60">&lt; 2,000 mg</span>
+                        <span class="text-[10px] text-brand-800/75">&lt; 2,000 mg</span>
                     </div>
-                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
-                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Cholesterol</span>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 rounded-lg">
+                        <span class="text-[10px] uppercase font-bold text-brand-900 block tracking-wider">Cholesterol</span>
                         <strong id="an-chol" class="text-sm font-bold text-brand-950 block mt-1">0 mg</strong>
-                        <span class="text-[10px] text-brand-800/60">&lt; 200 mg</span>
+                        <span class="text-[10px] text-brand-800/75">&lt; 200 mg</span>
                     </div>
-                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
-                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Sat. Fat</span>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 rounded-lg">
+                        <span class="text-[10px] uppercase font-bold text-brand-900 block tracking-wider">Sat. Fat</span>
                         <strong id="an-satfat" class="text-sm font-bold text-brand-950 block mt-1">0 g</strong>
-                        <span class="text-[10px] text-brand-800/60">&lt; 20 g</span>
+                        <span class="text-[10px] text-brand-800/75">&lt; 20 g</span>
                     </div>
-                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
-                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Added Sugar</span>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 rounded-lg">
+                        <span class="text-[10px] uppercase font-bold text-brand-900 block tracking-wider">Added Sugar</span>
                         <strong id="an-sugar" class="text-sm font-bold text-brand-950 block mt-1">0 g</strong>
-                        <span class="text-[10px] text-brand-800/60">&lt; 30 g</span>
+                        <span class="text-[10px] text-brand-800/75">&lt; 30 g</span>
                     </div>
-                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
-                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Dietary Fiber</span>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 rounded-lg">
+                        <span class="text-[10px] uppercase font-bold text-brand-900 block tracking-wider">Dietary Fiber</span>
                         <strong id="an-fiber" class="text-sm font-bold text-brand-950 block mt-1">0 g</strong>
-                        <span class="text-[10px] text-brand-800/60">&ge; 25 g</span>
+                        <span class="text-[10px] text-brand-800/75">&ge; 25 g</span>
                     </div>
-                    <div class="p-3.5 bg-brand-50 border border-brand-200 shadow-subtle-purple">
-                        <span class="text-[10px] uppercase font-bold text-brand-800 block tracking-wider">Potassium</span>
+                    <div class="p-3.5 bg-brand-50 border border-brand-200 rounded-lg">
+                        <span class="text-[10px] uppercase font-bold text-brand-900 block tracking-wider">Potassium</span>
                         <strong id="an-potassium" class="text-sm font-bold text-brand-950 block mt-1">0 mg</strong>
-                        <span class="text-[10px] text-brand-800/60">&ge; 2,600 mg</span>
+                        <span class="text-[10px] text-brand-800/75">&ge; 2,600 mg</span>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
+                <div class="bg-white p-5 border border-brand-200 rounded-xl shadow-card-purple">
                     <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-1">Multivariate Timeline Overlay</h3>
-                    <p class="text-xs text-brand-800/80 mb-3">Notice pain spikes trailing 24 to 48 hours following acute environmental, physical, or dietary stress.</p>
-                    <div id="chart-timeline" class="h-72"></div>
+                    <p class="text-xs text-brand-800 mb-3">Observe pain and fatigue shifts trailing 24 to 48 hours after environmental or physical stress.</p>
+                    <div id="chart-timeline" class="h-72" aria-label="Multivariate timeline chart"></div>
                 </div>
-                <div class="bg-white p-5 border border-brand-200 shadow-card-purple">
+                <div class="bg-white p-5 border border-brand-200 rounded-xl shadow-card-purple">
                     <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-1">Time-Lagged Correlation Matrix (T-1 to T-3)</h3>
-                    <p class="text-xs text-brand-800/80 mb-3">Statistical link between prior exposures and acute pain severity.</p>
-                    <div id="chart-heatmap" class="h-72"></div>
+                    <p class="text-xs text-brand-800 mb-3">Pearson correlation (r) between prior exposures and acute pain severity.</p>
+                    <div id="chart-heatmap" class="h-72" aria-label="Time-lagged correlation heatmap"></div>
                 </div>
             </div>
 
-            <div class="bg-white p-6 border border-brand-200 shadow-card-purple">
+            <div class="bg-white p-6 border border-brand-200 rounded-xl shadow-card-purple">
                 <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-1">Identified Potential Flare Triggers</h3>
-                <p class="text-xs text-brand-800/80 mb-3">Calculated via Pearson correlation across environmental, physical strain, and dietary factors.</p>
-                <div class="overflow-x-auto shadow-subtle-purple">
+                <p class="text-xs text-brand-800 mb-3">Exploratory Pearson correlations across environmental, physical strain, sleep, and dietary factors.</p>
+                <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm" id="table-triggers">
                         <thead>
-                            <tr class="border-b border-brand-200 text-xs uppercase text-brand-800 bg-brand-50">
+                            <tr class="border-b border-brand-200 text-xs uppercase text-brand-900 bg-brand-50">
                                 <th class="p-3">Candidate Trigger</th>
                                 <th class="p-3">Observed Delay Window</th>
                                 <th class="p-3">Correlation Strength (r)</th>
@@ -326,105 +357,110 @@
             </div>
         </section>
 
-        <section id="tab-clinical" class="hidden space-y-6">
-            <div class="no-print bg-brand-100 border border-brand-300 p-5 shadow-card-purple flex justify-between items-center">
+        <!-- ========================================================= -->
+        <!-- TAB 3: DOCTOR'S CLINICAL BRIEF                            -->
+        <!-- ========================================================= -->
+        <section id="tab-clinical" role="tabpanel" aria-labelledby="tab-btn-clinical" class="hidden space-y-6">
+            <div class="no-print bg-brand-100 border border-brand-300 rounded-xl p-5 shadow-card-purple flex flex-wrap justify-between items-center gap-4">
                 <div>
                     <span class="text-xs font-bold uppercase tracking-wider text-brand-950 block">Appointment Export View</span>
-                    <p class="text-xs text-brand-800">Formatted for rapid doctor review. Includes physical exertion and dietary biomarker scorecards.</p>
+                    <p class="text-xs text-brand-900/80">Formatted for rapid clinical review. Includes physical exertion and dietary biomarker scorecards.</p>
                 </div>
-                <button onclick="window.print()" class="px-5 py-2.5 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs uppercase tracking-wider shadow-button-purple transition">
+                <button type="button" onclick="window.print()" class="px-5 py-2.5 rounded-lg bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs uppercase tracking-wider shadow-button-purple transition">
                     Print / Export PDF
                 </button>
             </div>
 
-            <div class="bg-white p-8 border border-brand-200 print-card shadow-elevated-purple space-y-6">
-                <div class="flex justify-between items-start border-b border-brand-200 pb-4">
+            <div class="bg-white p-8 border border-brand-200 rounded-xl print-card shadow-elevated-purple space-y-6">
+                <div class="flex flex-wrap justify-between items-start border-b border-brand-200 pb-4 gap-4">
                     <div>
                         <h2 class="text-lg font-bold text-brand-950 uppercase tracking-wider">Lupus Clinical Disease Activity Brief</h2>
-                        <p class="text-xs text-brand-800">Patient: <strong id="doc-patient">Jane Doe</strong> | DOB: 1988-04-12</p>
+                        <p class="text-xs text-brand-900 mt-1">
+                            Patient: <strong id="doc-patient">Sample Patient</strong> | DOB: <strong id="doc-dob">1990-01-15</strong>
+                        </p>
                     </div>
                     <div class="text-right">
-                        <p class="text-xs font-semibold text-brand-900" id="doc-report-date"></p>
-                        <p class="text-xs text-brand-800/70">Monitoring Window: Past 60-90 Days</p>
+                        <p class="text-xs font-semibold text-brand-950" id="doc-report-date"></p>
+                        <p class="text-xs text-brand-800">Monitoring Window: Longitudinal Log Summary</p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-4 gap-4 border-b border-brand-200 pb-4 text-center">
-                    <div><span class="text-[10px] text-brand-800 font-bold uppercase block tracking-wider">Total Days Logged</span><strong id="doc-days" class="text-base font-bold text-brand-950">0</strong></div>
-                    <div><span class="text-[10px] text-brand-800 font-bold uppercase block tracking-wider">Flare Days Count</span><strong id="doc-flares" class="text-base font-bold text-brand-950">0</strong></div>
-                    <div><span class="text-[10px] text-brand-800 font-bold uppercase block tracking-wider">Mean Pain VAS</span><strong id="doc-pain" class="text-base font-bold text-brand-950">0.0</strong></div>
-                    <div><span class="text-[10px] text-brand-800 font-bold uppercase block tracking-wider">Avg Sleep</span><strong id="doc-sleep" class="text-base font-bold text-brand-950">0.0 hrs</strong></div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 border-b border-brand-200 pb-4 text-center">
+                    <div><span class="text-[10px] text-brand-900 font-bold uppercase block tracking-wider">Total Days Logged</span><strong id="doc-days" class="text-base font-bold text-brand-950">0</strong></div>
+                    <div><span class="text-[10px] text-brand-900 font-bold uppercase block tracking-wider">Flare Days Count</span><strong id="doc-flares" class="text-base font-bold text-brand-950">0</strong></div>
+                    <div><span class="text-[10px] text-brand-900 font-bold uppercase block tracking-wider">Mean Pain VAS</span><strong id="doc-pain" class="text-base font-bold text-brand-950">0.0</strong></div>
+                    <div><span class="text-[10px] text-brand-900 font-bold uppercase block tracking-wider">Avg Sleep</span><strong id="doc-sleep" class="text-base font-bold text-brand-950">0.0 hrs</strong></div>
                 </div>
 
-                <div class="bg-brand-50 p-4 border border-brand-200 shadow-subtle-purple">
-                    <h3 class="font-bold text-[11px] uppercase tracking-wider text-brand-900 mb-3">Major Dietary & Cardiovascular Health Indicators (30-Day Mean)</h3>
+                <div class="bg-brand-50 p-4 border border-brand-200 rounded-lg">
+                    <h3 class="font-bold text-[11px] uppercase tracking-wider text-brand-950 mb-3">Major Dietary & Cardiovascular Health Indicators (30-Day Mean)</h3>
                     <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
-                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Avg Daily Sodium</span>
+                        <div class="bg-white p-3 border border-brand-200 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-slate-600 block tracking-wider">Avg Daily Sodium</span>
                             <div class="flex items-baseline justify-between mt-1">
                                 <span id="doc-avg-sodium" class="text-sm font-bold text-brand-950">0 mg</span>
-                                <span id="badge-sodium" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &lt; 2,000 mg</span>
+                                <span id="badge-sodium" class="text-[9px] font-bold px-1.5 py-0.5 border rounded">Target: &lt; 2,000 mg</span>
                             </div>
-                            <span class="text-[10px] text-slate-500 mt-1 block">Renal & nephritis biomarker</span>
+                            <span class="text-[10px] text-slate-600 mt-1 block">Renal & nephritis consideration</span>
                         </div>
 
-                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
-                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Dietary Cholesterol</span>
+                        <div class="bg-white p-3 border border-brand-200 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-slate-600 block tracking-wider">Dietary Cholesterol</span>
                             <div class="flex items-baseline justify-between mt-1">
                                 <span id="doc-avg-cholesterol" class="text-sm font-bold text-brand-950">0 mg</span>
-                                <span id="badge-cholesterol" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &lt; 200 mg</span>
+                                <span id="badge-cholesterol" class="text-[9px] font-bold px-1.5 py-0.5 border rounded">Target: &lt; 200 mg</span>
                             </div>
-                            <span class="text-[10px] text-slate-500 mt-1 block">Arterial / steroid risk marker</span>
+                            <span class="text-[10px] text-slate-600 mt-1 block">Cardiovascular risk marker</span>
                         </div>
 
-                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
-                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Saturated Fat</span>
+                        <div class="bg-white p-3 border border-brand-200 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-slate-600 block tracking-wider">Saturated Fat</span>
                             <div class="flex items-baseline justify-between mt-1">
                                 <span id="doc-avg-satfat" class="text-sm font-bold text-brand-950">0 g</span>
-                                <span id="badge-satfat" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &lt; 20 g</span>
+                                <span id="badge-satfat" class="text-[9px] font-bold px-1.5 py-0.5 border rounded">Target: &lt; 20 g</span>
                             </div>
-                            <span class="text-[10px] text-slate-500 mt-1 block">Pro-inflammatory lipid load</span>
+                            <span class="text-[10px] text-slate-600 mt-1 block">Pro-inflammatory lipid load</span>
                         </div>
 
-                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
-                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Added Sugars</span>
+                        <div class="bg-white p-3 border border-brand-200 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-slate-600 block tracking-wider">Added Sugars</span>
                             <div class="flex items-baseline justify-between mt-1">
                                 <span id="doc-avg-sugar" class="text-sm font-bold text-brand-950">0 g</span>
-                                <span id="badge-sugar" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &lt; 30 g</span>
+                                <span id="badge-sugar" class="text-[9px] font-bold px-1.5 py-0.5 border rounded">Target: &lt; 30 g</span>
                             </div>
-                            <span class="text-[10px] text-slate-500 mt-1 block">Glycemic cytokine upregulation</span>
+                            <span class="text-[10px] text-slate-600 mt-1 block">Glycemic inflammatory load</span>
                         </div>
 
-                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
-                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Dietary Fiber</span>
+                        <div class="bg-white p-3 border border-brand-200 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-slate-600 block tracking-wider">Dietary Fiber</span>
                             <div class="flex items-baseline justify-between mt-1">
                                 <span id="doc-avg-fiber" class="text-sm font-bold text-brand-950">0 g</span>
-                                <span id="badge-fiber" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &ge; 25 g</span>
+                                <span id="badge-fiber" class="text-[9px] font-bold px-1.5 py-0.5 border rounded">Target: &ge; 25 g</span>
                             </div>
-                            <span class="text-[10px] text-slate-500 mt-1 block">Gut microbiome & immune balance</span>
+                            <span class="text-[10px] text-slate-600 mt-1 block">Microbiome & metabolic support</span>
                         </div>
 
-                        <div class="bg-white p-3 border border-brand-200 shadow-sm">
-                            <span class="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Potassium</span>
+                        <div class="bg-white p-3 border border-brand-200 rounded-lg">
+                            <span class="text-[10px] uppercase font-bold text-slate-600 block tracking-wider">Potassium</span>
                             <div class="flex items-baseline justify-between mt-1">
                                 <span id="doc-avg-potassium" class="text-sm font-bold text-brand-950">0 mg</span>
-                                <span id="badge-potassium" class="text-[9px] font-bold px-1.5 py-0.5 border">Target: &ge; 2,600 mg</span>
+                                <span id="badge-potassium" class="text-[9px] font-bold px-1.5 py-0.5 border rounded">Target: &ge; 2,600 mg</span>
                             </div>
-                            <span class="text-[10px] text-slate-500 mt-1 block">Electrolyte & vascular balance</span>
+                            <span class="text-[10px] text-slate-600 mt-1 block">Electrolyte & vascular balance</span>
                         </div>
                     </div>
                 </div>
 
                 <div>
                     <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-2">High-Confidence Multi-Factor Triggers (Weather, Strain & Nutrition)</h3>
-                    <ul id="doc-trigger-list" class="list-disc pl-5 text-xs text-brand-900 space-y-1"></ul>
+                    <ul id="doc-trigger-list" class="list-disc pl-5 text-xs text-brand-950 space-y-1"></ul>
                 </div>
 
                 <div>
                     <h3 class="font-bold text-xs uppercase tracking-wider text-brand-950 mb-2">Recent 14-Day Activity, Strain & Nutritional Log</h3>
-                    <div class="overflow-x-auto shadow-subtle-purple">
+                    <div class="overflow-x-auto">
                         <table class="w-full text-xs text-left border border-brand-200" id="doc-recent-table">
-                            <thead class="bg-brand-50 border-b border-brand-200 text-brand-900">
+                            <thead class="bg-brand-50 border-b border-brand-200 text-brand-950">
                                 <tr>
                                     <th class="p-2 border-r border-brand-200">Date</th>
                                     <th class="p-2 border-r border-brand-200">Pain</th>
@@ -443,7 +479,7 @@
                     </div>
                 </div>
 
-                <div class="pt-8 border-t border-brand-200 flex justify-between text-xs text-brand-800">
+                <div class="pt-8 border-t border-brand-200 flex justify-between text-xs text-brand-900">
                     <div>Physician Signature: ___________________________________</div>
                     <div>Date: ________________________</div>
                 </div>
@@ -452,7 +488,6 @@
     </div>
 
     <script>
-        // Session Guard: If not signed in, redirect to index.html (the login page)
         const activeUser = JSON.parse(localStorage.getItem('lupus_active_user'));
         if (!activeUser) {
             window.location.href = "index.html";
@@ -461,66 +496,124 @@
             if (chip) chip.innerText = activeUser.name;
             const docPatient = document.getElementById('doc-patient');
             if (docPatient) docPatient.innerText = activeUser.name;
+            const docDob = document.getElementById('doc-dob');
+            if (docDob) docDob.innerText = activeUser.dob || "1990-01-15";
         }
 
-        // Sign Out Function
         function signOutUser() {
             localStorage.removeItem('lupus_active_user');
             window.location.href = "index.html";
         }
+
         document.getElementById('input-date').valueAsDate = new Date();
-        document.getElementById('doc-report-date').innerText = new Date().toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
+        document.getElementById('doc-report-date').innerText = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
         });
 
-        // User-Specific Storage Keys
         function getUserStorageKey() {
             return activeUser && activeUser.email ? `lupus_records_${activeUser.email}` : 'lupus_records_guest';
+        }
+
+        function showStatusBanner(message, type = "info") {
+            const banner = document.getElementById('status-banner');
+            const text = document.getElementById('status-banner-text');
+            if (!banner || !text) return;
+
+            const palette = {
+                info: "bg-brand-100 border-brand-300 text-brand-950",
+                success: "bg-emerald-50 border-emerald-300 text-emerald-950",
+                warning: "bg-amber-50 border-amber-300 text-amber-950",
+                error: "bg-rose-50 border-rose-300 text-rose-950"
+            };
+            banner.className = `mb-5 p-3.5 border rounded-lg text-xs font-semibold flex justify-between items-center no-print ${palette[type] || palette.info}`;
+            text.innerText = message;
+            banner.classList.remove('hidden');
+        }
+
+        function hideStatusBanner() {
+            const banner = document.getElementById('status-banner');
+            if (banner) banner.classList.add('hidden');
         }
 
         function switchTab(tab) {
             ['log', 'analytics', 'clinical'].forEach(t => {
                 const sec = document.getElementById(`tab-${t}`);
                 const btn = document.getElementById(`tab-btn-${t}`);
-                if (sec) sec.classList.toggle('hidden', t !== tab);
+                const isSelected = t === tab;
+                if (sec) sec.classList.toggle('hidden', !isSelected);
                 if (btn) {
-                    if (t === tab) {
-                        btn.className = "px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-brand-700 text-white shadow-button-purple transition";
-                    } else {
-                        btn.className = "px-5 py-2.5 font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-800 hover:bg-brand-50 shadow-subtle-purple transition";
-                    }
+                    btn.setAttribute('aria-selected', String(isSelected));
+                    btn.className = isSelected
+                        ? "px-5 py-2.5 rounded-lg font-semibold text-xs uppercase tracking-wider bg-brand-700 text-white shadow-button-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600"
+                        : "px-5 py-2.5 rounded-lg font-semibold text-xs uppercase tracking-wider bg-white border border-brand-200 text-brand-900 hover:bg-brand-50 shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600";
                 }
             });
-            if (tab === 'analytics' || tab === 'clinical') refreshUI();
+            if (tab === 'analytics' || tab === 'clinical') {
+                refreshUI();
+                window.dispatchEvent(new Event('resize'));
+            }
         }
 
         function getDB() {
-            const key = getUserStorageKey();
-            return JSON.parse(localStorage.getItem(key) || '[]');
+            return JSON.parse(localStorage.getItem(getUserStorageKey()) || '[]');
         }
 
         function setDB(data) {
-            const key = getUserStorageKey();
-            localStorage.setItem(key, JSON.stringify(data));
+            localStorage.setItem(getUserStorageKey(), JSON.stringify(data));
         }
 
         function updateLocation() {
-            const loc = document.getElementById('input-city-state').value;
-            if (loc.trim()) {
+            const loc = document.getElementById('input-city-state').value.trim();
+            if (loc) {
                 document.getElementById('current-location-label').innerText = loc;
-                alert(`Location updated to ${loc}. Weather will sync using this city.`);
+                showStatusBanner(`Location updated to ${loc}. Weather data will sync for this city on check-in.`, "info");
             }
         }
 
-        // Clear only the current user's data
-        function clearAllData() {
-            if (confirm("Reset all stored entries for your account?")) {
-                const key = getUserStorageKey();
-                localStorage.removeItem(key);
-                location.reload();
+        // Single, user-scoped two-click reset handler (no blocking confirm() or duplicate function)
+        let resetArmed = false;
+        let resetTimer = null;
+        function handleResetClick() {
+            const btn = document.getElementById('btn-reset-db');
+            if (!resetArmed) {
+                resetArmed = true;
+                if (btn) btn.innerText = "Click Again to Confirm Reset";
+                showStatusBanner("Click 'Click Again to Confirm Reset' within 5 seconds to clear all records for your active profile.", "warning");
+                resetTimer = setTimeout(() => {
+                    resetArmed = false;
+                    if (btn) btn.innerText = "Reset Account Data";
+                }, 5000);
+                return;
             }
+            clearTimeout(resetTimer);
+            resetArmed = false;
+            if (btn) btn.innerText = "Reset Account Data";
+            localStorage.removeItem(getUserStorageKey());
+            refreshUI();
+            showStatusBanner("All stored entries for your account have been cleared.", "info");
+        }
+
+        function exportUserCSV() {
+            const db = getDB();
+            if (!db.length) {
+                showStatusBanner("No records available to export.", "warning");
+                return;
+            }
+            const headers = Object.keys(db[0]);
+            const rows = db.map(row =>
+                headers.map(h => JSON.stringify(row[h] ?? "")).join(",")
+            );
+            const csv = [headers.join(","), ...rows].join("\n");
+            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `lupus_flare_logs_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showStatusBanner(`Exported ${db.length} records to CSV.`, "success");
         }
 
         async function getCoordinates(query) {
@@ -533,64 +626,51 @@
             } catch (e) {
                 console.warn("Geocoding fallback used.", e);
             }
-            return { lat: 38.9615, lon: -76.7347 }; // Default Bowie, MD
+            return { lat: 38.9615, lon: -76.7347 };
         }
 
-        // Full-Spectrum Nutritional Heuristic Engine
+        // Nutritional Heuristic Engine (returns null nutrients if meals were not logged)
         function estimateNutritionFromMeals(text) {
-            const lower = text.toLowerCase();
-            
-            let sodium = 1350; 
-            let cholesterol = 95; 
+            const clean = (text || "").trim();
+            if (!clean) {
+                return {
+                    sodium_mg: null,
+                    cholesterol_mg: null,
+                    sat_fat_g: null,
+                    sugar_g: null,
+                    fiber_g: null,
+                    potassium_mg: null,
+                    has_garlic: 0,
+                    has_alcohol: 0
+                };
+            }
+
+            const lower = clean.toLowerCase();
+            let sodium = 1350;
+            let cholesterol = 95;
             let satFat = 11;
             let addedSugar = 14;
             let fiber = 21;
             let potassium = 2400;
 
-            if (lower.includes('bacon') || lower.includes('sausage')) { 
-                sodium += 580; cholesterol += 45; satFat += 7; 
-            }
-            if (lower.includes('egg') || lower.includes('eggs')) { 
-                cholesterol += 186; sodium += 70; satFat += 2; potassium += 70; 
-            }
-            if (lower.includes('cheese') || lower.includes('cheeseburger') || lower.includes('pizza')) { 
-                sodium += 720; cholesterol += 55; satFat += 9; 
-            }
-            if (lower.includes('fry') || lower.includes('fries') || lower.includes('chips')) { 
-                sodium += 520; satFat += 5; potassium += 320; 
-            }
-            if (lower.includes('soup') || lower.includes('ramen') || lower.includes('pho')) { 
-                sodium += 950; 
-            }
-            if (lower.includes('steak') || lower.includes('beef') || lower.includes('burger')) { 
-                sodium += 380; cholesterol += 85; satFat += 8; potassium += 350; 
-            }
-            if (lower.includes('seafood') || lower.includes('shrimp')) { 
-                cholesterol += 130; sodium += 220; 
-            }
-            if (lower.includes('fast food') || lower.includes('fried chicken')) { 
-                sodium += 1100; cholesterol += 65; satFat += 10; 
-            }
+            if (/\b(bacon|sausage)\b/.test(lower)) { sodium += 580; cholesterol += 45; satFat += 7; }
+            if (/\b(egg|eggs)\b/.test(lower)) { cholesterol += 186; sodium += 70; satFat += 2; potassium += 70; }
+            if (/\b(cheese|cheeseburger|pizza)\b/.test(lower)) { sodium += 720; cholesterol += 55; satFat += 9; }
+            if (/\b(fry|fries|chips)\b/.test(lower)) { sodium += 520; satFat += 5; potassium += 320; }
+            if (/\b(soup|ramen|pho)\b/.test(lower)) { sodium += 950; }
+            if (/\b(steak|beef|burger)\b/.test(lower)) { sodium += 380; cholesterol += 85; satFat += 8; potassium += 350; }
+            if (/\b(seafood|shrimp)\b/.test(lower)) { cholesterol += 130; sodium += 220; }
+            if (/\b(fast food|fried chicken)\b/.test(lower)) { sodium += 1100; cholesterol += 65; satFat += 10; }
 
-            if (lower.includes('cookie') || lower.includes('cake') || lower.includes('ice cream') || lower.includes('donut') || lower.includes('candy') || lower.includes('chocolate')) { 
-                addedSugar += 28; satFat += 6; 
-            }
-            if (lower.includes('soda') || lower.includes('juice') || lower.includes('sweet tea')) { 
-                addedSugar += 32; 
-            }
+            if (/\b(cookie|cookies|cake|ice cream|donut|candy|chocolate)\b/.test(lower)) { addedSugar += 28; satFat += 6; }
+            if (/\b(soda|juice|sweet tea)\b/.test(lower)) { addedSugar += 32; }
 
-            if (lower.includes('salad') || lower.includes('spinach') || lower.includes('kale') || lower.includes('broccoli')) { 
-                fiber += 6; potassium += 450; sodium = Math.max(800, sodium - 150); 
-            }
-            if (lower.includes('oatmeal') || lower.includes('chia') || lower.includes('flax') || lower.includes('beans') || lower.includes('lentil')) { 
-                fiber += 8; potassium += 380; cholesterol = Math.max(40, cholesterol - 25); 
-            }
-            if (lower.includes('banana') || lower.includes('potato') || lower.includes('sweet potato') || lower.includes('avocado')) { 
-                potassium += 550; fiber += 4; 
-            }
-            if (lower.includes('berry') || lower.includes('berries') || lower.includes('apple') || lower.includes('orange')) { 
-                fiber += 4; potassium += 220; 
-            }
+            if (/\b(salad|spinach|kale|broccoli)\b/.test(lower)) { fiber += 6; potassium += 450; sodium = Math.max(800, sodium - 150); }
+            if (/\b(oatmeal|chia|flax|beans|lentil|lentils)\b/.test(lower)) { fiber += 8; potassium += 380; cholesterol = Math.max(40, cholesterol - 25); }
+            if (/\b(banana|potato|sweet potato|avocado)\b/.test(lower)) { potassium += 550; fiber += 4; }
+            if (/\b(berry|berries|apple|orange)\b/.test(lower)) { fiber += 4; potassium += 220; }
+
+            const hasAlcohol = /\b(wine|beer|cocktail|liquor|alcohol)\b/.test(lower) && !/alcohol-free|non-alcoholic/.test(lower) ? 1 : 0;
 
             return {
                 sodium_mg: Math.round(sodium),
@@ -599,28 +679,36 @@
                 sugar_g: Math.round(addedSugar),
                 fiber_g: Math.round(fiber),
                 potassium_mg: Math.round(potassium),
-                has_garlic: (lower.includes('garlic') || lower.includes('alfalfa')) ? 1 : 0,
-                has_alcohol: (lower.includes('wine') || lower.includes('beer') || lower.includes('cocktail') || lower.includes('liquor') || lower.includes('alcohol')) ? 1 : 0
+                has_garlic: /\b(garlic|alfalfa)\b/.test(lower) ? 1 : 0,
+                has_alcohol: hasAlcohol
             };
         }
 
         async function saveCurrentEntry() {
-            const date = document.getElementById('input-date').value;
-            const cityQuery = document.getElementById('input-city-state').value || "Bowie, Maryland";
+            const entryDate = document.getElementById('input-date').value;
+            if (!entryDate) {
+                showStatusBanner("Please select a valid check-in date.", "error");
+                return;
+            }
 
+            const cityQuery = document.getElementById('input-city-state').value || "Bowie, Maryland";
             const coords = await getCoordinates(cityQuery);
 
             let max_uv = 5.0, pressure_delta = 3.0;
+            let weatherLive = false;
 
             try {
                 const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&daily=uv_index_max&hourly=surface_pressure&timezone=auto`);
                 const weather = await res.json();
-                if (weather.daily && weather.daily.uv_index_max) max_uv = weather.daily.uv_index_max[0];
+                if (weather.daily && weather.daily.uv_index_max) {
+                    max_uv = weather.daily.uv_index_max[0];
+                    weatherLive = true;
+                }
                 if (weather.hourly && weather.hourly.surface_pressure) {
                     const p = weather.hourly.surface_pressure.slice(0, 24);
                     pressure_delta = Math.max(...p) - Math.min(...p);
                 }
-            } catch(e) {
+            } catch (e) {
                 console.warn("Weather API fallback used:", e);
             }
 
@@ -633,23 +721,22 @@
 
             const n = estimateNutritionFromMeals(meals);
 
-            // Exercise and Physical Strain
             const actLevel = document.getElementById('activity-level').value;
-            const actMins = parseInt(document.getElementById('activity-minutes').value) || 0;
+            const actMins = parseInt(document.getElementById('activity-minutes').value, 10) || 0;
             const overexerted = document.getElementById('activity-overexertion').checked ? 1 : 0;
             const isStrenuous = (actLevel === 'high' || actLevel === 'labor' || overexerted === 1) ? 1 : 0;
 
             const record = {
-                date: date,
-                pain_score: parseInt(document.getElementById('input-pain').value),
-                fatigue_score: parseInt(document.getElementById('input-fatigue').value),
+                date: entryDate,
+                pain_score: parseInt(document.getElementById('input-pain').value, 10),
+                fatigue_score: parseInt(document.getElementById('input-fatigue').value, 10),
                 flare_active: document.getElementById('input-flare').checked ? 1 : 0,
                 sleep_hours: parseFloat(document.getElementById('input-sleep').value) || 7.0,
                 activity_level: actLevel,
                 activity_minutes: actMins,
                 overexertion: overexerted,
                 strenuous_activity: isStrenuous,
-                meals_logged: meals || "Standard balanced meals",
+                meals_logged: meals || "Not logged",
                 max_uv: parseFloat(max_uv.toFixed(1)),
                 pressure_delta: parseFloat(pressure_delta.toFixed(1)),
                 sodium_mg: n.sodium_mg,
@@ -662,12 +749,17 @@
                 alcohol: n.has_alcohol
             };
 
-            let db = getDB().filter(r => r.date !== date);
+            let db = getDB().filter(r => r.date !== entryDate);
             db.push(record);
-            db.sort((a,b) => new Date(a.date) - new Date(b.date));
+            db.sort((a, b) => new Date(a.date) - new Date(b.date));
             setDB(db);
 
-            alert("Check-in saved, physical strain and nutrition analyzed, and weather synced!");
+            showStatusBanner(
+                weatherLive
+                    ? `Check-in saved for ${entryDate} with live weather (UV ${record.max_uv}, ΔP ${record.pressure_delta} hPa).`
+                    : `Check-in saved for ${entryDate} using baseline weather estimates.`,
+                "success"
+            );
             switchTab('analytics');
         }
 
@@ -687,67 +779,61 @@
             return den1 && den2 ? num / Math.sqrt(den1 * den2) : 0;
         }
 
-        function refreshUI() {
-            const db = getDB();
+        function meanOfLogged(rows, key) {
+            const vals = rows.map(r => r[key]).filter(v => v !== null && v !== undefined && !Number.isNaN(v));
+            if (!vals.length) return null;
+            return vals.reduce((a, b) => a + b, 0) / vals.length;
+        }
 
-            // -----------------------------------------------------------------
-            // 1. EMPTY / ZERO-STATE HANDLING (Brand New Registered Users)
-            // -----------------------------------------------------------------
+        function refreshUI() {
+            const fullDb = getDB();
+            const windowSel = document.getElementById('analytics-window')?.value || 'all';
+            const db = windowSel === 'all' ? fullDb : fullDb.slice(-parseInt(windowSel, 10));
+
             if (!db || db.length === 0) {
-                // Reset Primary Metrics
                 document.getElementById('metric-total-days').innerText = "0";
                 document.getElementById('metric-flare-days').innerText = "0";
                 document.getElementById('metric-flare-pct').innerText = "0% flare incidence";
                 document.getElementById('metric-avg-pain').innerText = "0.0 / 10";
                 document.getElementById('metric-risk').innerText = "0%";
 
-                // Reset Analytics Tab Nutrition Scorecard
                 ['an-sodium', 'an-chol', 'an-satfat', 'an-sugar', 'an-fiber', 'an-potassium'].forEach(id => {
                     const el = document.getElementById(id);
-                    if (el) el.innerText = id.includes('sodium') || id.includes('potassium') || id.includes('chol') ? "0 mg" : "0 g";
+                    if (el) el.innerText = "N/A";
                 });
 
-                // Reset Doctor Brief Header Metrics
                 document.getElementById('doc-days').innerText = "0";
                 document.getElementById('doc-flares').innerText = "0";
                 document.getElementById('doc-pain').innerText = "0.0";
                 document.getElementById('doc-sleep').innerText = "0.0 hrs";
 
-                // Reset Doctor Brief Nutrition Values & Badges
-                document.getElementById('doc-avg-sodium').innerText = "0 mg";
-                document.getElementById('doc-avg-cholesterol').innerText = "0 mg";
-                document.getElementById('doc-avg-satfat').innerText = "0 g";
-                document.getElementById('doc-avg-sugar').innerText = "0 g";
-                document.getElementById('doc-avg-fiber').innerText = "0 g";
-                document.getElementById('doc-avg-potassium').innerText = "0 mg";
+                ['doc-avg-sodium', 'doc-avg-cholesterol', 'doc-avg-satfat', 'doc-avg-sugar', 'doc-avg-fiber', 'doc-avg-potassium'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = "N/A";
+                });
 
                 ['badge-sodium', 'badge-cholesterol', 'badge-satfat', 'badge-sugar', 'badge-fiber', 'badge-potassium'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
-                        el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-brand-200 bg-brand-50 text-brand-700 shadow-sm";
+                        el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-brand-200 bg-brand-50 text-brand-800 rounded";
                         el.innerText = "No Data";
                     }
                 });
 
-                // Clear Plotly Charts
                 Plotly.purge('chart-timeline');
                 Plotly.purge('chart-heatmap');
 
-                // Reset Tables
                 const tBody = document.querySelector('#table-triggers tbody');
-                if (tBody) tBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs text-brand-700 bg-white">No logs recorded yet. Complete your first daily check-in above.</td></tr>';
+                if (tBody) tBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs text-brand-800 bg-white">No logs recorded yet. Complete your first daily check-in above.</td></tr>';
 
                 const docTriggerList = document.getElementById('doc-trigger-list');
-                if (docTriggerList) docTriggerList.innerHTML = '<li class="text-brand-700 italic">Awaiting patient entries to compute latent cross-correlations.</li>';
+                if (docTriggerList) docTriggerList.innerHTML = '<li class="text-brand-800 italic">Awaiting patient entries to compute latent cross-correlations.</li>';
 
                 const docRecentTable = document.querySelector('#doc-recent-table tbody');
-                if (docRecentTable) docRecentTable.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-xs text-brand-700 bg-white">No recent check-in entries available.</td></tr>';
+                if (docRecentTable) docRecentTable.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-xs text-brand-800 bg-white">No recent check-in entries available.</td></tr>';
                 return;
             }
 
-            // -----------------------------------------------------------------
-            // 2. OVERVIEW METRICS & ACUTE RISK CALCULATION
-            // -----------------------------------------------------------------
             const totalDays = db.length;
             const flareDays = db.reduce((sum, r) => sum + (r.flare_active || 0), 0);
             const avgPain = (db.reduce((sum, r) => sum + (r.pain_score || 0), 0) / totalDays).toFixed(1);
@@ -758,7 +844,6 @@
             document.getElementById('metric-flare-pct').innerText = `${((flareDays / totalDays) * 100).toFixed(1)}% flare incidence`;
             document.getElementById('metric-avg-pain').innerText = `${avgPain} / 10`;
 
-            // 48-Hour Acute Risk Score
             const recent = db.slice(-2);
             let risk = 15;
             if (recent.length >= 2) {
@@ -771,78 +856,69 @@
             risk = Math.min(100, risk);
             document.getElementById('metric-risk').innerText = `${risk}%`;
 
-            // -----------------------------------------------------------------
-            // 3. ROLLING 30-DAY NUTRITIONAL HEALTH INDICATORS
-            // -----------------------------------------------------------------
             const last30 = db.slice(-30);
-            const avgSodium = Math.round(last30.reduce((sum, r) => sum + (r.sodium_mg || 1400), 0) / last30.length);
-            const avgCholesterol = Math.round(last30.reduce((sum, r) => sum + (r.cholesterol_mg || 110), 0) / last30.length);
-            const avgSatFat = Math.round(last30.reduce((sum, r) => sum + (r.sat_fat_g || 12), 0) / last30.length);
-            const avgSugar = Math.round(last30.reduce((sum, r) => sum + (r.sugar_g || 18), 0) / last30.length);
-            const avgFiber = Math.round(last30.reduce((sum, r) => sum + (r.fiber_g || 18), 0) / last30.length);
-            const avgPotassium = Math.round(last30.reduce((sum, r) => sum + (r.potassium_mg || 2400), 0) / last30.length);
+            const avgSodium = meanOfLogged(last30, 'sodium_mg');
+            const avgCholesterol = meanOfLogged(last30, 'cholesterol_mg');
+            const avgSatFat = meanOfLogged(last30, 'sat_fat_g');
+            const avgSugar = meanOfLogged(last30, 'sugar_g');
+            const avgFiber = meanOfLogged(last30, 'fiber_g');
+            const avgPotassium = meanOfLogged(last30, 'potassium_mg');
 
-            // Populate Analytics Tab Nutrition Row
-            document.getElementById('an-sodium').innerText = `${avgSodium.toLocaleString()} mg`;
-            document.getElementById('an-chol').innerText = `${avgCholesterol} mg`;
-            document.getElementById('an-satfat').innerText = `${avgSatFat} g`;
-            document.getElementById('an-sugar').innerText = `${avgSugar} g`;
-            document.getElementById('an-fiber').innerText = `${avgFiber} g`;
-            document.getElementById('an-potassium').innerText = `${avgPotassium.toLocaleString()} mg`;
+            document.getElementById('an-sodium').innerText = avgSodium !== null ? `${Math.round(avgSodium).toLocaleString()} mg` : "Not logged";
+            document.getElementById('an-chol').innerText = avgCholesterol !== null ? `${Math.round(avgCholesterol)} mg` : "Not logged";
+            document.getElementById('an-satfat').innerText = avgSatFat !== null ? `${Math.round(avgSatFat)} g` : "Not logged";
+            document.getElementById('an-sugar').innerText = avgSugar !== null ? `${Math.round(avgSugar)} g` : "Not logged";
+            document.getElementById('an-fiber').innerText = avgFiber !== null ? `${Math.round(avgFiber)} g` : "Not logged";
+            document.getElementById('an-potassium').innerText = avgPotassium !== null ? `${Math.round(avgPotassium).toLocaleString()} mg` : "Not logged";
 
-            // Populate Doctor Brief Header & Values
             document.getElementById('doc-days').innerText = totalDays;
             document.getElementById('doc-flares').innerText = flareDays;
             document.getElementById('doc-pain').innerText = `${avgPain} / 10`;
             document.getElementById('doc-sleep').innerText = `${avgSleep} hrs`;
 
-            document.getElementById('doc-avg-sodium').innerText = `${avgSodium.toLocaleString()} mg`;
-            document.getElementById('doc-avg-cholesterol').innerText = `${avgCholesterol} mg`;
-            document.getElementById('doc-avg-satfat').innerText = `${avgSatFat} g`;
-            document.getElementById('doc-avg-sugar').innerText = `${avgSugar} g`;
-            document.getElementById('doc-avg-fiber').innerText = `${avgFiber} g`;
-            document.getElementById('doc-avg-potassium').innerText = `${avgPotassium.toLocaleString()} mg`;
+            document.getElementById('doc-avg-sodium').innerText = avgSodium !== null ? `${Math.round(avgSodium).toLocaleString()} mg` : "N/A";
+            document.getElementById('doc-avg-cholesterol').innerText = avgCholesterol !== null ? `${Math.round(avgCholesterol)} mg` : "N/A";
+            document.getElementById('doc-avg-satfat').innerText = avgSatFat !== null ? `${Math.round(avgSatFat)} g` : "N/A";
+            document.getElementById('doc-avg-sugar').innerText = avgSugar !== null ? `${Math.round(avgSugar)} g` : "N/A";
+            document.getElementById('doc-avg-fiber').innerText = avgFiber !== null ? `${Math.round(avgFiber)} g` : "N/A";
+            document.getElementById('doc-avg-potassium').innerText = avgPotassium !== null ? `${Math.round(avgPotassium).toLocaleString()} mg` : "N/A";
 
-            // Clinical Guidelines Evaluation & Badges
-            function updateBadge(id, isAlert, alertText, okText) {
+            function updateBadge(id, val, isAlert, alertText, okText) {
                 const el = document.getElementById(id);
                 if (!el) return;
-                if (isAlert) {
-                    el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-rose-300 bg-rose-50 text-rose-800 shadow-sm";
+                if (val === null) {
+                    el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-brand-200 bg-brand-50 text-brand-800 rounded";
+                    el.innerText = "Not Logged";
+                } else if (isAlert) {
+                    el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-rose-300 bg-rose-50 text-rose-900 rounded";
                     el.innerText = alertText;
                 } else {
-                    el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-emerald-300 bg-emerald-50 text-emerald-800 shadow-sm";
+                    el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-emerald-300 bg-emerald-50 text-emerald-900 rounded";
                     el.innerText = okText;
                 }
             }
 
-            updateBadge('badge-sodium', avgSodium > 2000, "Elevated (> 2k mg)", "Within Target");
-            updateBadge('badge-cholesterol', avgCholesterol > 200, "Elevated (> 200 mg)", "Within Target");
-            updateBadge('badge-satfat', avgSatFat > 20, "Elevated (> 20 g)", "Within Target");
-            updateBadge('badge-sugar', avgSugar > 30, "High (> 30 g)", "Within Target");
-            updateBadge('badge-fiber', avgFiber < 25, "Low (< 25 g)", "Optimal");
-            updateBadge('badge-potassium', avgPotassium < 2600, "Low (< 2.6k mg)", "Balanced");
+            updateBadge('badge-sodium', avgSodium, avgSodium > 2000, "Elevated (> 2k mg)", "Within Target");
+            updateBadge('badge-cholesterol', avgCholesterol, avgCholesterol > 200, "Elevated (> 200 mg)", "Within Target");
+            updateBadge('badge-satfat', avgSatFat, avgSatFat > 20, "Elevated (> 20 g)", "Within Target");
+            updateBadge('badge-sugar', avgSugar, avgSugar > 30, "High (> 30 g)", "Within Target");
+            updateBadge('badge-fiber', avgFiber, avgFiber < 25, "Low (< 25 g)", "Optimal");
+            updateBadge('badge-potassium', avgPotassium, avgPotassium < 2600, "Low (< 2.6k mg)", "Balanced");
 
-            // -----------------------------------------------------------------
-            // 4. PLOTLY MULTIVARIATE TIMELINE OVERLAY
-            // -----------------------------------------------------------------
             Plotly.newPlot('chart-timeline', [
                 { x: db.map(r => r.date), y: db.map(r => r.pain_score), name: 'Pain VAS', line: { color: '#5C4879', width: 2.5 } },
                 { x: db.map(r => r.date), y: db.map(r => r.fatigue_score), name: 'Fatigue', line: { color: '#AA98C2', width: 1.5 } },
                 { x: db.map(r => r.date), y: db.map(r => r.max_uv), name: 'Max UV', line: { color: '#725C93', dash: 'dot' } }
-            ], { 
-                margin: { l: 30, r: 15, t: 10, b: 30 }, 
+            ], {
+                margin: { l: 30, r: 15, t: 10, b: 30 },
                 height: 260,
                 legend: { orientation: 'h', y: 1.15, x: 0 },
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent'
-            });
+            }, { responsive: true });
 
-            // -----------------------------------------------------------------
-            // 5. TIME-LAGGED CROSS-CORRELATION MATRIX (T-1 TO T-3)
-            // -----------------------------------------------------------------
-            const features = ['max_uv', 'pressure_delta', 'strenuous_activity', 'sodium_mg', 'sat_fat_g', 'garlic', 'alcohol'];
-            const labels = ['Max UV', 'Δ Pressure', 'Physical Overexertion', 'Sodium (mg)', 'Saturated Fat', 'Garlic/Alfalfa', 'Alcohol'];
+            const features = ['max_uv', 'pressure_delta', 'strenuous_activity', 'sleep_hours', 'sodium_mg', 'sat_fat_g', 'garlic', 'alcohol'];
+            const labels = ['Max UV', 'Δ Pressure', 'Physical Overexertion', 'Sleep Hours', 'Sodium (mg)', 'Saturated Fat', 'Garlic/Alfalfa', 'Alcohol'];
             const corrMatrix = [];
             const triggerResults = [];
 
@@ -851,8 +927,11 @@
                 for (let lag = 1; lag <= 3; lag++) {
                     const x = [], y = [];
                     for (let i = lag; i < db.length; i++) {
-                        x.push(db[i - lag][feat] || 0);
-                        y.push(db[i].pain_score || 0);
+                        const val = db[i - lag][feat];
+                        if (val !== null && val !== undefined) {
+                            x.push(val);
+                            y.push(db[i].pain_score || 0);
+                        }
                     }
                     const r = calculatePearson(x, y);
                     row.push(parseFloat(r.toFixed(2)));
@@ -867,20 +946,17 @@
                 y: labels,
                 type: 'heatmap',
                 colorscale: [
-                    [0, '#F9F8FC'],
+                    [0, '#FAF8FC'],
                     [0.5, '#C8BCD8'],
                     [1, '#4A3962']
                 ]
-            }], { 
-                margin: { l: 130, r: 15, t: 10, b: 30 }, 
+            }], {
+                margin: { l: 135, r: 15, t: 10, b: 30 },
                 height: 260,
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent'
-            });
+            }, { responsive: true });
 
-            // -----------------------------------------------------------------
-            // 6. POPULATE CANDIDATE TRIGGERS TABLE
-            // -----------------------------------------------------------------
             triggerResults.sort((a, b) => b.r - a.r);
             const tBody = document.querySelector('#table-triggers tbody');
             if (tBody) {
@@ -889,17 +965,14 @@
                     tBody.innerHTML += `
                         <tr class="border-b border-brand-100 hover:bg-brand-50/50">
                             <td class="p-3 font-semibold text-brand-950">${t.feature}</td>
-                            <td class="p-3 text-brand-800">${t.lag}</td>
-                            <td class="p-3 font-bold ${t.r > 0.25 ? 'text-brand-800' : 'text-slate-600'}">
+                            <td class="p-3 text-brand-900">${t.lag}</td>
+                            <td class="p-3 font-bold ${t.r > 0.25 ? 'text-brand-900' : 'text-slate-600'}">
                                 ${t.r > 0 ? '+' : ''}${t.r.toFixed(2)}
                             </td>
                         </tr>`;
                 });
             }
 
-            // -----------------------------------------------------------------
-            // 7. DOCTOR'S CLINICAL BRIEF FINDINGS
-            // -----------------------------------------------------------------
             const docTriggerList = document.getElementById('doc-trigger-list');
             if (docTriggerList) {
                 docTriggerList.innerHTML = '';
@@ -911,17 +984,14 @@
                 if (strenuousCount > 0) {
                     docTriggerList.innerHTML += `<li>Physical Strain: Strenuous activity or overexertion reported on <strong>${strenuousCount}</strong> logged day(s).</li>`;
                 }
-                if (avgSodium > 2000) {
-                    docTriggerList.innerHTML += `<li>30-day mean sodium (<strong>${avgSodium.toLocaleString()} mg/day</strong>) exceeds standard nephritis prevention targets (&lt; 2,000 mg).</li>`;
+                if (avgSodium !== null && avgSodium > 2000) {
+                    docTriggerList.innerHTML += `<li>30-day mean sodium (<strong>${Math.round(avgSodium).toLocaleString()} mg/day</strong>) exceeds standard nephritis prevention targets (&lt; 2,000 mg).</li>`;
                 }
-                if (avgSatFat > 20) {
-                    docTriggerList.innerHTML += `<li>30-day mean saturated fat (<strong>${avgSatFat} g/day</strong>) exceeds cardiovascular recommendation (&lt; 20 g).</li>`;
+                if (avgSatFat !== null && avgSatFat > 20) {
+                    docTriggerList.innerHTML += `<li>30-day mean saturated fat (<strong>${Math.round(avgSatFat)} g/day</strong>) exceeds cardiovascular recommendation (&lt; 20 g).</li>`;
                 }
             }
 
-            // -----------------------------------------------------------------
-            // 8. POPULATE RECENT 14-DAY LOG TABLE
-            // -----------------------------------------------------------------
             const docRecentTable = document.querySelector('#doc-recent-table tbody');
             if (docRecentTable) {
                 docRecentTable.innerHTML = '';
@@ -936,21 +1006,20 @@
                     docRecentTable.innerHTML += `
                         <tr class="hover:bg-brand-50/40">
                             <td class="p-2 border-r border-brand-100 font-medium">${r.date}</td>
-                            <td class="p-2 border-r border-brand-100 font-bold text-brand-900">${r.pain_score}</td>
-                            <td class="p-2 border-r border-brand-100">${r.flare_active ? '<span class="text-rose-700 font-bold">Yes</span>' : 'No'}</td>
-                            <td class="p-2 border-r border-brand-100">${r.max_uv !== undefined ? r.max_uv : '-'}</td>
-                            <td class="p-2 border-r border-brand-100">${r.pressure_delta !== undefined ? r.pressure_delta : '-'}</td>
-                            <td class="p-2 border-r border-brand-100 font-semibold text-brand-800">${actDisplay}</td>
+                            <td class="p-2 border-r border-brand-100 font-bold text-brand-950">${r.pain_score}</td>
+                            <td class="p-2 border-r border-brand-100">${r.flare_active ? '<span class="text-rose-800 font-bold">Yes</span>' : 'No'}</td>
+                            <td class="p-2 border-r border-brand-100">${r.max_uv ?? '-'}</td>
+                            <td class="p-2 border-r border-brand-100">${r.pressure_delta ?? '-'}</td>
+                            <td class="p-2 border-r border-brand-100 font-semibold text-brand-900">${actDisplay}</td>
                             <td class="p-2 border-r border-brand-100">${r.sodium_mg ? r.sodium_mg.toLocaleString() + ' mg' : '-'}</td>
                             <td class="p-2 border-r border-brand-100">${r.sat_fat_g ? r.sat_fat_g + ' g' : '-'}</td>
                             <td class="p-2 border-r border-brand-100">${r.fiber_g ? r.fiber_g + ' g' : '-'}</td>
-                            <td class="p-2 truncate max-w-xs text-slate-600">${r.meals_logged || '-'}</td>
+                            <td class="p-2 truncate max-w-xs text-slate-700">${r.meals_logged || '-'}</td>
                         </tr>`;
                 });
             }
         }
 
-        // Mock 60-Day Sample Data Seeder with Weather, Exercise & Nutrition
         function seedMockData() {
             const data = [];
             const today = new Date();
@@ -965,7 +1034,6 @@
                 const alcohol = Math.random() > 0.8 ? 1 : 0;
                 const sleep = parseFloat((Math.random() * 3 + 5.5).toFixed(1));
 
-                // Simulated Exercise & Physical Strain
                 const actRoll = Math.random();
                 let actLevel = "none";
                 let actMins = 0;
@@ -975,8 +1043,6 @@
                 else if (actRoll > 0.25) { actLevel = "light"; actMins = 30; }
 
                 const isStrenuous = (actLevel === 'high' || overexert === 1) ? 1 : 0;
-
-                // Simulated full-spectrum nutrients
                 const sodium = Math.round(Math.random() * 1600 + 1500);
                 const cholesterol = Math.round(Math.random() * 250 + 110);
                 const satFat = Math.round(Math.random() * 18 + 10);
@@ -984,9 +1050,9 @@
                 const fiber = Math.round(Math.random() * 16 + 14);
                 const potassium = Math.round(Math.random() * 1400 + 2000);
 
-                // Multi-factor causal lag generation (T-2 days)
                 let pain = Math.floor(Math.random() * 3) + 2;
-                if (i <= 57 && (data[data.length - 2]?.max_uv > 7.5 || data[data.length - 2]?.strenuous_activity === 1 || data[data.length - 2]?.garlic === 1)) {
+                const lag2 = data[data.length - 2];
+                if (lag2 && (lag2.max_uv > 7.5 || lag2.strenuous_activity === 1 || lag2.garlic === 1)) {
                     pain += 5;
                 }
                 pain = Math.min(10, pain);
@@ -1020,40 +1086,32 @@
                 });
             }
             setDB(data);
-            alert("Loaded 60 days of clinical sample data with Exercise & Nutrition!");
+            showStatusBanner("Loaded 60 days of synthetic sample data with exercise and nutrition records.", "success");
             switchTab('analytics');
-        }
-
-        function clearAllData() {
-            if (confirm("Reset all stored records?")) {
-                localStorage.removeItem('lupus_records');
-                location.reload();
-            }
         }
 
         if (getDB().length > 0) refreshUI();
     </script>
-    <!-- Licensing, Trademark & Clinical Governance Footer -->
+
     <footer class="bg-white border-t border-brand-200 mt-12 py-8 text-xs text-brand-900/80 no-print">
         <div class="max-w-6xl mx-auto px-4 space-y-4">
             <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b border-brand-100">
                 <div class="space-y-1">
                     <p class="font-bold uppercase tracking-wider text-brand-950 text-[11px]">
-                        Lupus Flare Tracker & Early Warning Engine™
+                        Lupus Flare Tracker & Early Warning Engine
                     </p>
-                    <p class="text-[11px] text-brand-700">
+                    <p class="text-[11px] text-brand-800">
                         Longitudinal Multi-Factor Autoimmune Decision Support & Analytics Platform
                     </p>
                 </div>
             </div>
 
-            <div class="flex flex-wrap justify-between items-start gap-4 text-[10px] text-brand-800/70 leading-relaxed">
+            <div class="flex flex-wrap justify-between items-start gap-4 text-[11px] text-brand-900/75 leading-relaxed">
                 <p class="max-w-2xl">
-                    <strong>Legal & Clinical Notice:</strong> Lupus Flare Tracker™ is an investigational decision-support interface intended for personal monitoring and clinical discussion. It does not provide medical diagnoses, treatment plans, or emergency intervention. Always consult a qualified board-certified rheumatologist for medical decisions.
+                    <strong>Legal & Clinical Notice:</strong> Lupus Flare Tracker is an investigational decision-support interface intended for personal monitoring and clinical discussion. It does not provide medical diagnoses, treatment plans, or emergency intervention. Always consult a qualified board-certified rheumatologist for medical decisions.
                 </p>
                 <div class="text-right space-y-0.5">
                     <p>© 2026 Christopher Donalds. All rights reserved.</p>
-                    <p>Trademarks and registered marks are property of their respective holders.</p>
                 </div>
             </div>
         </div>
