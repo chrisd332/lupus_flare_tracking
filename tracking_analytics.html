@@ -43,8 +43,10 @@
             .no-print { display: none !important; }
             body { background: #FFFFFF !important; font-size: 10pt; color: #231A30 !important; }
             .print-card { border: 1px solid #C8BCD8 !important; break-inside: avoid; box-shadow: none !important; padding: 16px !important; }
-            table { page-break-inside: auto; }
+            .overflow-x-auto { overflow: visible !important; }
+            table { page-break-inside: auto; width: 100% !important; }
             tr { page-break-inside: avoid; page-break-after: auto; }
+            td, th { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
         }
     </style>
 </head>
@@ -175,22 +177,21 @@
                         </div>
                     </div>
 
-                    <div class="bg-brand-50/60 border-l-4 border-l-amber-500 rounded-r-lg p-4">
+                    <div class="bg-brand-50/60 border-l-4 border-l-brand-600 rounded-r-lg p-4">
                         <div class="flex justify-between items-center mb-2">
                             <label for="input-fatigue" class="text-xs font-bold text-brand-900 uppercase tracking-wider">4. Fatigue / Energy Depletion</label>
                             <div class="flex items-center gap-1.5">
-                                <span id="pill-fatigue" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300">Moderate</span>
-                                <span id="label-fatigue" class="text-xs font-bold text-amber-950 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-300 tabular-nums">4 / 10</span>
+                                <span id="pill-fatigue" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 text-brand-900 border border-brand-300">Moderate</span>
+                                <span id="label-fatigue" class="text-xs font-bold text-brand-950 bg-white px-2.5 py-0.5 rounded-full border border-brand-300 tabular-nums">4 / 10</span>
                             </div>
                         </div>
-                        <input type="range" id="input-fatigue" min="0" max="10" value="4" class="w-full h-2 bg-brand-200 rounded-lg appearance-none cursor-pointer accent-amber-600" oninput="updateScaleReadout('fatigue', this.value)">
+                        <input type="range" id="input-fatigue" min="0" max="10" value="4" class="w-full h-2 bg-brand-200 rounded-lg appearance-none cursor-pointer accent-brand-700" oninput="updateScaleReadout('fatigue', this.value)">
                         <div class="flex justify-between text-[11px] text-slate-600 mt-1.5">
                             <span>0 (Full Energy)</span>
                             <span>5 (Sluggish)</span>
                             <span>10 (Severe Fatigue)</span>
                         </div>
                     </div>
-                </div>
 
                 <div class="p-4 bg-brand-100/70 border border-brand-300 border-l-4 border-l-brand-800 rounded-lg flex items-center space-x-3">
                     <input type="checkbox" id="input-flare" class="w-4 h-4 rounded text-brand-700 focus:ring-brand-700 accent-brand-700">
@@ -613,7 +614,7 @@
                 pill.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 text-brand-900 border border-brand-300";
             } else if (val <= 6) {
                 pill.innerText = "Moderate";
-                pill.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-300";
+                pill.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-200 text-brand-950 border border-brand-300";
             } else {
                 pill.innerText = "High";
                 pill.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-950 border border-rose-300";
@@ -1154,7 +1155,7 @@
                             <td class="p-2.5 border-r border-brand-100">${r.sodium_mg ? r.sodium_mg.toLocaleString() + ' mg' : '-'}</td>
                             <td class="p-2.5 border-r border-brand-100">${r.sat_fat_g ? r.sat_fat_g + ' g' : '-'}</td>
                             <td class="p-2.5 border-r border-brand-100">${r.fiber_g ? r.fiber_g + ' g' : '-'}</td>
-                            <td class="p-2.5 truncate max-w-xs text-slate-700">${r.meals_logged || '-'}</td>
+                            <td class="p-2.5 whitespace-normal break-words min-w-[200px] text-slate-700">${r.meals_logged || '-'}</td>
                         </tr>`;
                 });
             }
