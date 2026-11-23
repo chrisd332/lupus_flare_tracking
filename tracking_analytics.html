@@ -57,7 +57,19 @@
                     <p class="text-xs text-brand-700">Environmental Triggers, Physical Strain & Dietary Analytics</p>
                 </div>
             </div>
+            <!-- Top Right Actions & User Account Status -->
             <div class="flex items-center space-x-2">
+                <!-- Active User Display Badge -->
+                <span id="user-display-chip" class="px-3 py-1.5 text-xs font-semibold text-brand-900 bg-brand-100 border border-brand-300 shadow-subtle-purple">
+                    Patient Account
+                </span>
+
+                <!-- Sign Out Button -->
+                <button onclick="signOutUser()" class="px-3.5 py-1.5 text-xs font-semibold text-brand-800 bg-white hover:bg-brand-50 border border-brand-300 shadow-subtle-purple transition">
+                    Sign Out
+                </button>
+
+                <!-- Existing Action Buttons -->
                 <button onclick="seedMockData()" class="px-3.5 py-1.5 text-xs font-semibold text-brand-800 bg-brand-50 hover:bg-brand-100 border border-brand-300 shadow-subtle-purple transition">
                     Load 60-Day Sample Data
                 </button>
@@ -463,6 +475,11 @@
             day: 'numeric' 
         });
 
+        // User-Specific Storage Keys
+        function getUserStorageKey() {
+            return activeUser && activeUser.email ? `lupus_records_${activeUser.email}` : 'lupus_records_guest';
+        }
+
         function switchTab(tab) {
             ['log', 'analytics', 'clinical'].forEach(t => {
                 const sec = document.getElementById(`tab-${t}`);
@@ -480,11 +497,13 @@
         }
 
         function getDB() {
-            return JSON.parse(localStorage.getItem('lupus_records') || '[]');
+            const key = getUserStorageKey();
+            return JSON.parse(localStorage.getItem(key) || '[]');
         }
 
         function setDB(data) {
-            localStorage.setItem('lupus_records', JSON.stringify(data));
+            const key = getUserStorageKey();
+            localStorage.setItem(key, JSON.stringify(data));
         }
 
         function updateLocation() {
@@ -492,6 +511,15 @@
             if (loc.trim()) {
                 document.getElementById('current-location-label').innerText = loc;
                 alert(`Location updated to ${loc}. Weather will sync using this city.`);
+            }
+        }
+
+        // Clear only the current user's data
+        function clearAllData() {
+            if (confirm("Reset all stored entries for your account?")) {
+                const key = getUserStorageKey();
+                localStorage.removeItem(key);
+                location.reload();
             }
         }
 
@@ -661,42 +689,100 @@
 
         function refreshUI() {
             const db = getDB();
-            if (db.length === 0) return;
 
+            // -----------------------------------------------------------------
+            // 1. EMPTY / ZERO-STATE HANDLING (Brand New Registered Users)
+            // -----------------------------------------------------------------
+            if (!db || db.length === 0) {
+                // Reset Primary Metrics
+                document.getElementById('metric-total-days').innerText = "0";
+                document.getElementById('metric-flare-days').innerText = "0";
+                document.getElementById('metric-flare-pct').innerText = "0% flare incidence";
+                document.getElementById('metric-avg-pain').innerText = "0.0 / 10";
+                document.getElementById('metric-risk').innerText = "0%";
+
+                // Reset Analytics Tab Nutrition Scorecard
+                ['an-sodium', 'an-chol', 'an-satfat', 'an-sugar', 'an-fiber', 'an-potassium'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = id.includes('sodium') || id.includes('potassium') || id.includes('chol') ? "0 mg" : "0 g";
+                });
+
+                // Reset Doctor Brief Header Metrics
+                document.getElementById('doc-days').innerText = "0";
+                document.getElementById('doc-flares').innerText = "0";
+                document.getElementById('doc-pain').innerText = "0.0";
+                document.getElementById('doc-sleep').innerText = "0.0 hrs";
+
+                // Reset Doctor Brief Nutrition Values & Badges
+                document.getElementById('doc-avg-sodium').innerText = "0 mg";
+                document.getElementById('doc-avg-cholesterol').innerText = "0 mg";
+                document.getElementById('doc-avg-satfat').innerText = "0 g";
+                document.getElementById('doc-avg-sugar').innerText = "0 g";
+                document.getElementById('doc-avg-fiber').innerText = "0 g";
+                document.getElementById('doc-avg-potassium').innerText = "0 mg";
+
+                ['badge-sodium', 'badge-cholesterol', 'badge-satfat', 'badge-sugar', 'badge-fiber', 'badge-potassium'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-brand-200 bg-brand-50 text-brand-700 shadow-sm";
+                        el.innerText = "No Data";
+                    }
+                });
+
+                // Clear Plotly Charts
+                Plotly.purge('chart-timeline');
+                Plotly.purge('chart-heatmap');
+
+                // Reset Tables
+                const tBody = document.querySelector('#table-triggers tbody');
+                if (tBody) tBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs text-brand-700 bg-white">No logs recorded yet. Complete your first daily check-in above.</td></tr>';
+
+                const docTriggerList = document.getElementById('doc-trigger-list');
+                if (docTriggerList) docTriggerList.innerHTML = '<li class="text-brand-700 italic">Awaiting patient entries to compute latent cross-correlations.</li>';
+
+                const docRecentTable = document.querySelector('#doc-recent-table tbody');
+                if (docRecentTable) docRecentTable.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-xs text-brand-700 bg-white">No recent check-in entries available.</td></tr>';
+                return;
+            }
+
+            // -----------------------------------------------------------------
+            // 2. OVERVIEW METRICS & ACUTE RISK CALCULATION
+            // -----------------------------------------------------------------
             const totalDays = db.length;
-            const flareDays = db.reduce((sum, r) => sum + r.flare_active, 0);
-            const avgPain = (db.reduce((sum, r) => sum + r.pain_score, 0) / totalDays).toFixed(1);
+            const flareDays = db.reduce((sum, r) => sum + (r.flare_active || 0), 0);
+            const avgPain = (db.reduce((sum, r) => sum + (r.pain_score || 0), 0) / totalDays).toFixed(1);
             const avgSleep = (db.reduce((sum, r) => sum + (r.sleep_hours || 7), 0) / totalDays).toFixed(1);
 
-            // Compute 30-Day Rolling Nutritional Averages
-            const last30 = db.slice(-30);
-            const avgSodium = Math.round(last30.reduce((sum, r) => sum + (r.sodium_mg || 1800), 0) / last30.length);
-            const avgCholesterol = Math.round(last30.reduce((sum, r) => sum + (r.cholesterol_mg || 150), 0) / last30.length);
-            const avgSatFat = Math.round(last30.reduce((sum, r) => sum + (r.sat_fat_g || 14), 0) / last30.length);
-            const avgSugar = Math.round(last30.reduce((sum, r) => sum + (r.sugar_g || 22), 0) / last30.length);
-            const avgFiber = Math.round(last30.reduce((sum, r) => sum + (r.fiber_g || 19), 0) / last30.length);
-            const avgPotassium = Math.round(last30.reduce((sum, r) => sum + (r.potassium_mg || 2400), 0) / last30.length);
-
-            // Overview Metric Cards
             document.getElementById('metric-total-days').innerText = totalDays;
             document.getElementById('metric-flare-days').innerText = flareDays;
-            document.getElementById('metric-flare-pct').innerText = `${((flareDays/totalDays)*100).toFixed(1)}% flare incidence`;
+            document.getElementById('metric-flare-pct').innerText = `${((flareDays / totalDays) * 100).toFixed(1)}% flare incidence`;
             document.getElementById('metric-avg-pain').innerText = `${avgPain} / 10`;
 
-            // 48h Risk Index calculation
+            // 48-Hour Acute Risk Score
             const recent = db.slice(-2);
             let risk = 15;
             if (recent.length >= 2) {
-                if (Math.max(...recent.map(r => r.max_uv)) >= 7) risk += 25;
-                if (Math.max(...recent.map(r => r.pressure_delta)) >= 6) risk += 20;
-                if (Math.min(...recent.map(r => r.sleep_hours)) < 5.5) risk += 15;
+                if (Math.max(...recent.map(r => r.max_uv || 0)) >= 7) risk += 25;
+                if (Math.max(...recent.map(r => r.pressure_delta || 0)) >= 6) risk += 20;
+                if (Math.min(...recent.map(r => r.sleep_hours || 7)) < 5.5) risk += 15;
                 if (recent.some(r => r.strenuous_activity === 1)) risk += 20;
                 if (recent.some(r => r.garlic || r.alcohol)) risk += 10;
             }
             risk = Math.min(100, risk);
             document.getElementById('metric-risk').innerText = `${risk}%`;
 
-            // Analytics Tab Nutrition Row
+            // -----------------------------------------------------------------
+            // 3. ROLLING 30-DAY NUTRITIONAL HEALTH INDICATORS
+            // -----------------------------------------------------------------
+            const last30 = db.slice(-30);
+            const avgSodium = Math.round(last30.reduce((sum, r) => sum + (r.sodium_mg || 1400), 0) / last30.length);
+            const avgCholesterol = Math.round(last30.reduce((sum, r) => sum + (r.cholesterol_mg || 110), 0) / last30.length);
+            const avgSatFat = Math.round(last30.reduce((sum, r) => sum + (r.sat_fat_g || 12), 0) / last30.length);
+            const avgSugar = Math.round(last30.reduce((sum, r) => sum + (r.sugar_g || 18), 0) / last30.length);
+            const avgFiber = Math.round(last30.reduce((sum, r) => sum + (r.fiber_g || 18), 0) / last30.length);
+            const avgPotassium = Math.round(last30.reduce((sum, r) => sum + (r.potassium_mg || 2400), 0) / last30.length);
+
+            // Populate Analytics Tab Nutrition Row
             document.getElementById('an-sodium').innerText = `${avgSodium.toLocaleString()} mg`;
             document.getElementById('an-chol').innerText = `${avgCholesterol} mg`;
             document.getElementById('an-satfat').innerText = `${avgSatFat} g`;
@@ -704,13 +790,12 @@
             document.getElementById('an-fiber').innerText = `${avgFiber} g`;
             document.getElementById('an-potassium').innerText = `${avgPotassium.toLocaleString()} mg`;
 
-            // Doctor Brief Header Metrics
+            // Populate Doctor Brief Header & Values
             document.getElementById('doc-days').innerText = totalDays;
             document.getElementById('doc-flares').innerText = flareDays;
             document.getElementById('doc-pain').innerText = `${avgPain} / 10`;
             document.getElementById('doc-sleep').innerText = `${avgSleep} hrs`;
 
-            // Doctor Brief Nutritional Scorecard Values
             document.getElementById('doc-avg-sodium').innerText = `${avgSodium.toLocaleString()} mg`;
             document.getElementById('doc-avg-cholesterol').innerText = `${avgCholesterol} mg`;
             document.getElementById('doc-avg-satfat').innerText = `${avgSatFat} g`;
@@ -718,9 +803,10 @@
             document.getElementById('doc-avg-fiber').innerText = `${avgFiber} g`;
             document.getElementById('doc-avg-potassium').innerText = `${avgPotassium.toLocaleString()} mg`;
 
-            // Status Badges & Evaluation
+            // Clinical Guidelines Evaluation & Badges
             function updateBadge(id, isAlert, alertText, okText) {
                 const el = document.getElementById(id);
+                if (!el) return;
                 if (isAlert) {
                     el.className = "text-[9px] font-bold px-1.5 py-0.5 border border-rose-300 bg-rose-50 text-rose-800 shadow-sm";
                     el.innerText = alertText;
@@ -737,20 +823,24 @@
             updateBadge('badge-fiber', avgFiber < 25, "Low (< 25 g)", "Optimal");
             updateBadge('badge-potassium', avgPotassium < 2600, "Low (< 2.6k mg)", "Balanced");
 
-            // Timeline Overlay Plot with Purple/Violet Spectrum
+            // -----------------------------------------------------------------
+            // 4. PLOTLY MULTIVARIATE TIMELINE OVERLAY
+            // -----------------------------------------------------------------
             Plotly.newPlot('chart-timeline', [
                 { x: db.map(r => r.date), y: db.map(r => r.pain_score), name: 'Pain VAS', line: { color: '#5C4879', width: 2.5 } },
                 { x: db.map(r => r.date), y: db.map(r => r.fatigue_score), name: 'Fatigue', line: { color: '#AA98C2', width: 1.5 } },
                 { x: db.map(r => r.date), y: db.map(r => r.max_uv), name: 'Max UV', line: { color: '#725C93', dash: 'dot' } }
             ], { 
-                margin: { l: 25, r: 15, t: 10, b: 30 }, 
+                margin: { l: 30, r: 15, t: 10, b: 30 }, 
                 height: 260,
                 legend: { orientation: 'h', y: 1.15, x: 0 },
                 paper_bgcolor: 'transparent',
                 plot_bgcolor: 'transparent'
             });
 
-            // Time-Lagged Cross-Correlation Matrix (Weather, Physical Strain & Diet)
+            // -----------------------------------------------------------------
+            // 5. TIME-LAGGED CROSS-CORRELATION MATRIX (T-1 TO T-3)
+            // -----------------------------------------------------------------
             const features = ['max_uv', 'pressure_delta', 'strenuous_activity', 'sodium_mg', 'sat_fat_g', 'garlic', 'alcohol'];
             const labels = ['Max UV', 'Δ Pressure', 'Physical Overexertion', 'Sodium (mg)', 'Saturated Fat', 'Garlic/Alfalfa', 'Alcohol'];
             const corrMatrix = [];
@@ -762,7 +852,7 @@
                     const x = [], y = [];
                     for (let i = lag; i < db.length; i++) {
                         x.push(db[i - lag][feat] || 0);
-                        y.push(db[i].pain_score);
+                        y.push(db[i].pain_score || 0);
                     }
                     const r = calculatePearson(x, y);
                     row.push(parseFloat(r.toFixed(2)));
@@ -788,61 +878,76 @@
                 plot_bgcolor: 'transparent'
             });
 
-            // Triggers Table
-            triggerResults.sort((a,b) => b.r - a.r);
+            // -----------------------------------------------------------------
+            // 6. POPULATE CANDIDATE TRIGGERS TABLE
+            // -----------------------------------------------------------------
+            triggerResults.sort((a, b) => b.r - a.r);
             const tBody = document.querySelector('#table-triggers tbody');
-            tBody.innerHTML = '';
-            triggerResults.slice(0, 5).forEach(t => {
-                tBody.innerHTML += `
-                    <tr class="border-b border-brand-100 hover:bg-brand-50/50">
-                        <td class="p-3 font-semibold text-brand-950">${t.feature}</td>
-                        <td class="p-3 text-brand-800">${t.lag}</td>
-                        <td class="p-3 font-bold ${t.r > 0.25 ? 'text-brand-800' : 'text-slate-600'}">
-                            ${t.r > 0 ? '+' : ''}${t.r.toFixed(2)}
-                        </td>
-                    </tr>`;
-            });
+            if (tBody) {
+                tBody.innerHTML = '';
+                triggerResults.slice(0, 5).forEach(t => {
+                    tBody.innerHTML += `
+                        <tr class="border-b border-brand-100 hover:bg-brand-50/50">
+                            <td class="p-3 font-semibold text-brand-950">${t.feature}</td>
+                            <td class="p-3 text-brand-800">${t.lag}</td>
+                            <td class="p-3 font-bold ${t.r > 0.25 ? 'text-brand-800' : 'text-slate-600'}">
+                                ${t.r > 0 ? '+' : ''}${t.r.toFixed(2)}
+                            </td>
+                        </tr>`;
+                });
+            }
 
-            // Doctor Brief Triggers List
+            // -----------------------------------------------------------------
+            // 7. DOCTOR'S CLINICAL BRIEF FINDINGS
+            // -----------------------------------------------------------------
             const docTriggerList = document.getElementById('doc-trigger-list');
-            docTriggerList.innerHTML = '';
-            triggerResults.slice(0, 3).forEach(t => {
-                docTriggerList.innerHTML += `<li>Pain correlates with <strong>${t.feature}</strong> at a <strong>${t.lag}</strong> window (r = ${t.r.toFixed(2)}).</li>`;
-            });
+            if (docTriggerList) {
+                docTriggerList.innerHTML = '';
+                triggerResults.slice(0, 3).forEach(t => {
+                    docTriggerList.innerHTML += `<li>Pain correlates with <strong>${t.feature}</strong> at a <strong>${t.lag}</strong> window (r = ${t.r.toFixed(2)}).</li>`;
+                });
 
-            const strenuousCount = db.filter(r => r.strenuous_activity === 1).length;
-            if (strenuousCount > 0) {
-                docTriggerList.innerHTML += `<li>Physical Strain: Strenuous activity or overexertion reported on <strong>${strenuousCount}</strong> logged day(s).</li>`;
-            }
-            if (avgSodium > 2000) {
-                docTriggerList.innerHTML += `<li>30-day mean sodium (<strong>${avgSodium.toLocaleString()} mg/day</strong>) exceeds standard nephritis prevention targets (< 2,000 mg).</li>`;
+                const strenuousCount = db.filter(r => r.strenuous_activity === 1).length;
+                if (strenuousCount > 0) {
+                    docTriggerList.innerHTML += `<li>Physical Strain: Strenuous activity or overexertion reported on <strong>${strenuousCount}</strong> logged day(s).</li>`;
+                }
+                if (avgSodium > 2000) {
+                    docTriggerList.innerHTML += `<li>30-day mean sodium (<strong>${avgSodium.toLocaleString()} mg/day</strong>) exceeds standard nephritis prevention targets (&lt; 2,000 mg).</li>`;
+                }
+                if (avgSatFat > 20) {
+                    docTriggerList.innerHTML += `<li>30-day mean saturated fat (<strong>${avgSatFat} g/day</strong>) exceeds cardiovascular recommendation (&lt; 20 g).</li>`;
+                }
             }
 
-            // Doctor Brief 14-Day Table with Exercise
+            // -----------------------------------------------------------------
+            // 8. POPULATE RECENT 14-DAY LOG TABLE
+            // -----------------------------------------------------------------
             const docRecentTable = document.querySelector('#doc-recent-table tbody');
-            docRecentTable.innerHTML = '';
-            db.slice(-14).reverse().forEach(r => {
-                let actDisplay = "Rest";
-                if (r.activity_level === 'light') actDisplay = "Light (" + r.activity_minutes + "m)";
-                else if (r.activity_level === 'moderate') actDisplay = "Mod (" + r.activity_minutes + "m)";
-                else if (r.activity_level === 'high') actDisplay = "High (" + r.activity_minutes + "m)";
-                else if (r.activity_level === 'labor') actDisplay = "Labor (" + r.activity_minutes + "m)";
-                if (r.overexertion) actDisplay += " [Overexerted]";
+            if (docRecentTable) {
+                docRecentTable.innerHTML = '';
+                db.slice(-14).reverse().forEach(r => {
+                    let actDisplay = "Rest";
+                    if (r.activity_level === 'light') actDisplay = "Light (" + (r.activity_minutes || 0) + "m)";
+                    else if (r.activity_level === 'moderate') actDisplay = "Mod (" + (r.activity_minutes || 0) + "m)";
+                    else if (r.activity_level === 'high') actDisplay = "High (" + (r.activity_minutes || 0) + "m)";
+                    else if (r.activity_level === 'labor') actDisplay = "Labor (" + (r.activity_minutes || 0) + "m)";
+                    if (r.overexertion) actDisplay += " [Overexerted]";
 
-                docRecentTable.innerHTML += `
-                    <tr class="hover:bg-brand-50/40">
-                        <td class="p-2 border-r border-brand-100 font-medium">${r.date}</td>
-                        <td class="p-2 border-r border-brand-100 font-bold text-brand-900">${r.pain_score}</td>
-                        <td class="p-2 border-r border-brand-100">${r.flare_active ? '<span class="text-rose-700 font-bold">Yes</span>' : 'No'}</td>
-                        <td class="p-2 border-r border-brand-100">${r.max_uv}</td>
-                        <td class="p-2 border-r border-brand-100">${r.pressure_delta}</td>
-                        <td class="p-2 border-r border-brand-100 font-semibold text-brand-800">${actDisplay}</td>
-                        <td class="p-2 border-r border-brand-100">${r.sodium_mg ? r.sodium_mg.toLocaleString() + ' mg' : '-'}</td>
-                        <td class="p-2 border-r border-brand-100">${r.sat_fat_g ? r.sat_fat_g + ' g' : '-'}</td>
-                        <td class="p-2 border-r border-brand-100">${r.fiber_g ? r.fiber_g + ' g' : '-'}</td>
-                        <td class="p-2 truncate max-w-xs text-slate-600">${r.meals_logged || '-'}</td>
-                    </tr>`;
-            });
+                    docRecentTable.innerHTML += `
+                        <tr class="hover:bg-brand-50/40">
+                            <td class="p-2 border-r border-brand-100 font-medium">${r.date}</td>
+                            <td class="p-2 border-r border-brand-100 font-bold text-brand-900">${r.pain_score}</td>
+                            <td class="p-2 border-r border-brand-100">${r.flare_active ? '<span class="text-rose-700 font-bold">Yes</span>' : 'No'}</td>
+                            <td class="p-2 border-r border-brand-100">${r.max_uv !== undefined ? r.max_uv : '-'}</td>
+                            <td class="p-2 border-r border-brand-100">${r.pressure_delta !== undefined ? r.pressure_delta : '-'}</td>
+                            <td class="p-2 border-r border-brand-100 font-semibold text-brand-800">${actDisplay}</td>
+                            <td class="p-2 border-r border-brand-100">${r.sodium_mg ? r.sodium_mg.toLocaleString() + ' mg' : '-'}</td>
+                            <td class="p-2 border-r border-brand-100">${r.sat_fat_g ? r.sat_fat_g + ' g' : '-'}</td>
+                            <td class="p-2 border-r border-brand-100">${r.fiber_g ? r.fiber_g + ' g' : '-'}</td>
+                            <td class="p-2 truncate max-w-xs text-slate-600">${r.meals_logged || '-'}</td>
+                        </tr>`;
+                });
+            }
         }
 
         // Mock 60-Day Sample Data Seeder with Weather, Exercise & Nutrition
@@ -928,5 +1033,30 @@
 
         if (getDB().length > 0) refreshUI();
     </script>
+    <!-- Licensing, Trademark & Clinical Governance Footer -->
+    <footer class="bg-white border-t border-brand-200 mt-12 py-8 text-xs text-brand-900/80 no-print">
+        <div class="max-w-6xl mx-auto px-4 space-y-4">
+            <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b border-brand-100">
+                <div class="space-y-1">
+                    <p class="font-bold uppercase tracking-wider text-brand-950 text-[11px]">
+                        Lupus Flare Tracker & Early Warning Engine™
+                    </p>
+                    <p class="text-[11px] text-brand-700">
+                        Longitudinal Multi-Factor Autoimmune Decision Support & Analytics Platform
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-between items-start gap-4 text-[10px] text-brand-800/70 leading-relaxed">
+                <p class="max-w-2xl">
+                    <strong>Legal & Clinical Notice:</strong> Lupus Flare Tracker™ is an investigational decision-support interface intended for personal monitoring and clinical discussion. It does not provide medical diagnoses, treatment plans, or emergency intervention. Always consult a qualified board-certified rheumatologist for medical decisions.
+                </p>
+                <div class="text-right space-y-0.5">
+                    <p>© 2026 Christopher Donalds. All rights reserved.</p>
+                    <p>Trademarks and registered marks are property of their respective holders.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

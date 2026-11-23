@@ -39,24 +39,6 @@
 </head>
 <body class="bg-brand-25 text-slate-800 antialiased font-sans min-h-screen flex flex-col justify-between">
 
-    <!-- Top Navigation Header -->
-    <header class="bg-white border-b border-brand-200 shadow-card-purple">
-        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 border border-brand-400 bg-brand-100 flex items-center justify-center font-bold text-xs text-brand-900 tracking-wider uppercase shadow-subtle-purple">
-                    LFT
-                </div>
-                <div>
-                    <h1 class="text-base font-bold text-brand-950 tracking-tight leading-tight">Lupus Flare Tracker & Early Warning Engine</h1>
-                    <p class="text-[11px] text-brand-700">Clinical Analytics & Decision Support Portal</p>
-                </div>
-            </div>
-            <a href="https://github.com/chrisd332/lupus_flare_tracking" target="_blank" class="text-xs font-semibold uppercase tracking-wider text-brand-800 hover:text-brand-950 transition">
-                Repository
-            </a>
-        </div>
-    </header>
-
     <!-- Main Authentication Container -->
     <main class="flex-grow flex items-center justify-center px-4 py-12">
         <div class="w-full max-w-md bg-white border border-brand-200 shadow-elevated-purple p-8">
@@ -127,14 +109,6 @@
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-brand-200 py-4 text-center text-xs text-brand-800/70">
-        <div class="max-w-6xl mx-auto px-4 flex flex-wrap justify-between items-center gap-2">
-            <span>Client-Side Architecture: Data remains private to your local browser storage.</span>
-            <span>MIT License</span>
-        </div>
-    </footer>
-
     <!-- JavaScript Layer: Account Management & Guest Seeding -->
     <script>
         let isRegisterMode = false;
@@ -160,7 +134,7 @@
                 btnSubmit.innerText = "Create Account";
                 switchText.childNodes[0].nodeValue = "Already have an account? ";
                 switchBtn.innerText = "Sign In";
-                forgotLabel.classList.add('hidden');
+                if (forgotLabel) forgotLabel.classList.add('hidden');
             } else {
                 nameField.classList.add('hidden');
                 document.getElementById('input-name').required = false;
@@ -169,7 +143,7 @@
                 btnSubmit.innerText = "Sign In";
                 switchText.childNodes[0].nodeValue = "Don't have an account? ";
                 switchBtn.innerText = "Register";
-                forgotLabel.classList.remove('hidden');
+                if (forgotLabel) forgotLabel.classList.remove('hidden');
             }
         }
 
@@ -184,15 +158,15 @@
 
         function handleAuthSubmit(e) {
             e.preventDefault();
-            const email = document.getElementById('input-email').value.trim();
+            const email = document.getElementById('input-email').value.trim().toLowerCase();
             const password = document.getElementById('input-password').value;
-            const name = document.getElementById('input-name').value.trim();
+            const name = document.getElementById('input-name') ? document.getElementById('input-name').value.trim() : "";
 
             const accounts = JSON.parse(localStorage.getItem('lupus_users') || '[]');
 
             if (isRegisterMode) {
                 // Registration Logic
-                if (accounts.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+                if (accounts.some(u => u.email === email)) {
                     showAlert("An account with this email address already exists.");
                     return;
                 }
@@ -204,33 +178,50 @@
                 };
                 accounts.push(newUser);
                 localStorage.setItem('lupus_users', JSON.stringify(accounts));
-                localStorage.setItem('lupus_active_user', JSON.stringify({ name: newUser.name, email: newUser.email, isGuest: false }));
                 
-                showAlert("Account created successfully. Loading dashboard...", false);
-                setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 800);
+                // Set active session
+                localStorage.setItem('lupus_active_user', JSON.stringify({ 
+                    name: newUser.name, 
+                    email: newUser.email, 
+                    isGuest: false 
+                }));
+
+                // IMPORTANT: Initialize clean, empty records for this specific new user
+                const userStorageKey = `lupus_records_${email}`;
+                localStorage.setItem(userStorageKey, JSON.stringify([]));
+                
+                showAlert("Account created successfully. Loading empty dashboard...", false);
+                setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 700);
             } else {
-                // Login Logic
-                const user = accounts.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+                // Sign-in Logic
+                const user = accounts.find(u => u.email === email && u.password === password);
                 if (user) {
-                    localStorage.setItem('lupus_active_user', JSON.stringify({ name: user.name, email: user.email, isGuest: false }));
+                    localStorage.setItem('lupus_active_user', JSON.stringify({ 
+                        name: user.name, 
+                        email: user.email, 
+                        isGuest: false 
+                    }));
                     showAlert("Authentication verified. Redirecting...", false);
-                    setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 600);
+                    setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 500);
                 } else {
-                    showAlert("Invalid email address or password. Try registering or sign in as Demo Guest.");
+                    showAlert("Invalid email address or password. Try registering or explore as Demo Guest.");
                 }
             }
         }
 
-        // Fast-Track Demo Guest Seeder
+        // Fast-Track Demo Guest Login
         function loginAsDemoGuest() {
+            const guestEmail = "guest@clinical-demo.org";
             localStorage.setItem('lupus_active_user', JSON.stringify({
                 name: "Jane Doe (Demo Guest)",
-                email: "guest@clinical-demo.org",
+                email: guestEmail,
                 isGuest: true
             }));
 
-            // Pre-seed 60 days of clinical data if none exists
-            const existing = JSON.parse(localStorage.getItem('lupus_records') || '[]');
+            const guestKey = `lupus_records_${guestEmail}`;
+            const existing = JSON.parse(localStorage.getItem(guestKey) || '[]');
+            
+            // Seed 60 days into the guest key ONLY
             if (existing.length === 0) {
                 const data = [];
                 const today = new Date();
@@ -295,11 +286,36 @@
                         alcohol: alcohol
                     });
                 }
-                localStorage.setItem('lupus_records', JSON.stringify(data));
+                localStorage.setItem(guestKey, JSON.stringify(data));
             }
 
-            window.location.href = "tracking_analytics.html"
+            window.location.href = "tracking_analytics.html";
         }
     </script>
+    <!-- Licensing, Trademark & Clinical Governance Footer -->
+    <footer class="bg-white border-t border-brand-200 mt-12 py-8 text-xs text-brand-900/80 no-print">
+        <div class="max-w-6xl mx-auto px-4 space-y-4">
+            <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b border-brand-100">
+                <div class="space-y-1">
+                    <p class="font-bold uppercase tracking-wider text-brand-950 text-[11px]">
+                        Lupus Flare Tracker & Early Warning Engine™
+                    </p>
+                    <p class="text-[11px] text-brand-700">
+                        Longitudinal Multi-Factor Autoimmune Decision Support & Analytics Platform
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-between items-start gap-4 text-[10px] text-brand-800/70 leading-relaxed">
+                <p class="max-w-2xl">
+                    <strong>Legal & Clinical Notice:</strong> Lupus Flare Tracker™ is an investigational decision-support interface intended for personal monitoring and clinical discussion. It does not provide medical diagnoses, treatment plans, or emergency intervention. Always consult a qualified board-certified rheumatologist for medical decisions.
+                </p>
+                <div class="text-right space-y-0.5">
+                    <p>© 2026 Christopher Donalds. All rights reserved.</p>
+                    <p>Trademarks and registered marks are property of their respective holders.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
