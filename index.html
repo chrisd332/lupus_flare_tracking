@@ -35,11 +35,14 @@
             }
         }
     </script>
+    <style>
+        svg { max-width: 100%; max-height: 100%; }
+    </style>
 </head>
 <body class="bg-brand-25 text-slate-800 antialiased font-sans min-h-screen flex flex-col justify-between">
 
     <main class="flex-grow flex items-center justify-center px-4 py-5">
-        <div class="w-full max-w-2xl lg:max-w-4xl bg-white border border-brand-200 rounded-xl shadow-elevated-purple p-6 sm:p-7">
+        <div class="w-full max-w-2xl lg:max-w-3xl bg-white border border-brand-200 rounded-xl shadow-elevated-purple p-6 sm:p-7">
 
             <div class="text-center mb-4">
                 <span class="text-[11px] font-bold uppercase tracking-widest text-brand-800 bg-brand-100 border border-brand-300 rounded-full px-3 py-0.5 inline-block mb-2">
@@ -50,95 +53,68 @@
             </div>
 
             <!-- Browser Storage Notice -->
-            <div class="bg-brand-50/80 border border-brand-200 border-l-4 border-l-brand-600 rounded-r-lg px-3.5 py-2 mb-4 text-[11px] text-brand-900 leading-snug">
+            <div class="bg-brand-50/80 border border-brand-200 rounded-lg px-3.5 py-2 mb-4 text-[11px] text-brand-900 leading-snug">
                 <strong>Browser Prototype Notice:</strong> Accounts and health logs are stored locally in this browser's <code>localStorage</code> for demonstration purposes only. Do not enter real Protected Health Information (PHI).
             </div>
 
             <!-- Non-Blocking Status / Error Box -->
             <div id="auth-alert" role="status" aria-live="polite" class="hidden p-2.5 border rounded-lg mb-4 text-xs font-semibold"></div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
-                <!-- Left Column: Demo Guest Fast-Track -->
-                <div class="lg:col-span-5 bg-brand-50 border border-brand-200 rounded-xl p-4 shadow-subtle-purple flex flex-col justify-between">
+            <!-- Demo Guest Fast-Track -->
+            <div class="bg-brand-50 border border-brand-200 rounded-lg p-3.5 mb-4 shadow-subtle-purple flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="text-left">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-brand-900 block">Portfolio & Clinical Review</span>
+                    <p class="text-xs text-brand-900/80">Instant preview pre-populated with 60 days of synthetic multi-factor correlations.</p>
+                </div>
+                <button type="button" onclick="loginAsDemoGuest()" class="sm:shrink-0 px-4 py-2 bg-brand-100 hover:bg-brand-200 border border-brand-300 rounded-lg text-brand-950 text-xs font-bold uppercase tracking-wider shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+                    Explore as Demo Guest
+                </button>
+            </div>
+
+            <div class="relative flex py-1.5 items-center mb-4">
+                <div class="flex-grow border-t border-brand-200"></div>
+                <span class="flex-shrink mx-3 text-[11px] uppercase font-bold tracking-widest text-brand-700">Or Continue With Local Profile</span>
+                <div class="flex-grow border-t border-brand-200"></div>
+            </div>
+
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+                <div id="field-name" class="hidden">
+                    <label for="input-name" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Display Name</label>
+                    <input type="text" id="input-name" autocomplete="name" placeholder="e.g. Alex Rivera" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                </div>
+
+                <div id="field-dob" class="hidden">
+                    <label for="input-dob" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Date of Birth (Optional)</label>
+                    <input type="date" id="input-dob" autocomplete="bday" value="1990-01-15" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <div class="flex items-center gap-2 mb-1.5">
-                            <span class="w-2 h-2 rounded-full bg-brand-700"></span>
-                            <span class="text-[11px] font-bold uppercase tracking-wider text-brand-950">Portfolio & Clinical Review</span>
-                        </div>
-                        <p class="text-xs text-brand-900/85 leading-relaxed mb-3">
-                            Instant preview pre-populated with 60 days of synthetic multi-factor correlations.
-                        </p>
-                        <ul class="space-y-1 text-[11px] text-brand-900/80 mb-4">
-                            <li class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
-                                <span>60-day UV & barometric swing logs</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
-                                <span>T-1 to T-3 lagged trigger matrix</span>
-                            </li>
-                            <li class="flex items-center gap-2">
-                                <span class="w-1.5 h-1.5 rounded-full bg-brand-500"></span>
-                                <span>Printable rheumatology clinical brief</span>
-                            </li>
-                        </ul>
+                        <label for="input-email" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Email Address</label>
+                        <input type="email" id="input-email" required autocomplete="email" placeholder="user@example.com" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                     </div>
-                    <button type="button" onclick="loginAsDemoGuest()" class="w-full py-2.5 px-4 bg-white hover:bg-brand-100 border border-brand-300 rounded-lg text-brand-950 text-xs font-bold uppercase tracking-wider shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
-                        Explore as Demo Guest
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="input-password" class="text-xs font-bold uppercase tracking-wider text-brand-900">Password</label>
+                            <button type="button" id="label-forgot" class="text-[11px] font-semibold text-brand-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" onclick="simulateForgotPassword()">Forgot?</button>
+                        </div>
+                        <input type="password" id="input-password" required minlength="6" autocomplete="current-password" placeholder="Minimum 6 characters" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit" class="w-full py-2.5 bg-brand-700 hover:bg-brand-800 rounded-lg text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+                    Sign In
+                </button>
+            </form>
+
+            <div class="text-center mt-4 pt-3 border-t border-brand-100">
+                <p class="text-xs text-brand-900/80">
+                    <span id="auth-switch-prompt">Don't have an account?</span>
+                    <button type="button" onclick="toggleAuthMode()" class="font-bold text-brand-800 hover:underline ml-1 uppercase tracking-wider text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" id="auth-switch-btn">
+                        Register
                     </button>
-                </div>
-
-                <!-- Right Column: Local Profile Form -->
-                <div class="lg:col-span-7 flex flex-col justify-between">
-                    <div>
-                        <div class="flex items-center gap-2 mb-3">
-                            <span class="text-[11px] uppercase font-bold tracking-widest text-brand-700">Or Continue With Local Profile</span>
-                            <div class="flex-grow border-t border-brand-200"></div>
-                        </div>
-
-                        <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="register-fields">
-                                <div id="field-name" class="hidden">
-                                    <label for="input-name" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Display Name</label>
-                                    <input type="text" id="input-name" autocomplete="name" placeholder="e.g. Alex Rivera" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-                                </div>
-
-                                <div id="field-dob" class="hidden">
-                                    <label for="input-dob" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Date of Birth (Optional)</label>
-                                    <input type="date" id="input-dob" autocomplete="bday" value="1990-01-15" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white tabular-nums focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label for="input-email" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Email Address</label>
-                                    <input type="email" id="input-email" required autocomplete="email" placeholder="user@example.com" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-                                </div>
-
-                                <div>
-                                    <div class="flex justify-between items-center mb-1">
-                                        <label for="input-password" class="text-xs font-bold uppercase tracking-wider text-brand-900">Password</label>
-                                        <button type="button" id="label-forgot" class="text-[11px] font-semibold text-brand-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" onclick="simulateForgotPassword()">Forgot?</button>
-                                    </div>
-                                    <input type="password" id="input-password" required minlength="6" autocomplete="current-password" placeholder="Minimum 6 characters" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
-                                </div>
-                            </div>
-
-                            <button type="submit" id="btn-submit" class="w-full py-2.5 bg-brand-700 hover:bg-brand-800 rounded-lg text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
-                                Sign In
-                            </button>
-                        </form>
-                    </div>
-
-                    <div class="text-center mt-4 pt-3 border-t border-brand-100">
-                        <p class="text-xs text-brand-900/80">
-                            <span id="auth-switch-prompt">Don't have an account?</span>
-                            <button type="button" onclick="toggleAuthMode()" class="font-bold text-brand-800 hover:underline ml-1 uppercase tracking-wider text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" id="auth-switch-btn">
-                                Register
-                            </button>
-                        </p>
-                    </div>
-                </div>
+                </p>
             </div>
         </div>
     </main>
@@ -338,23 +314,11 @@
     </script>
 
     <footer class="bg-white border-t border-brand-200 py-5 text-xs text-brand-900/80 no-print">
-        <div class="max-w-5xl mx-auto px-4 space-y-2">
-            <div class="flex flex-wrap justify-between items-center gap-2 pb-2 border-b border-brand-100">
-                <p class="font-bold uppercase tracking-wider text-brand-950 text-[11px]">
-                    Lupus Flare Tracker & Early Warning Engine
-                </p>
-                <p class="text-[11px] text-brand-800">
-                    Longitudinal Multi-Factor Autoimmune Decision Support & Analytics Platform
-                </p>
-            </div>
-            <div class="flex flex-wrap justify-between items-start gap-4 text-[11px] text-brand-900/75 leading-relaxed">
-                <p class="max-w-2xl">
-                    <strong>Legal & Clinical Notice:</strong> Lupus Flare Tracker is an investigational decision-support interface intended for personal monitoring and clinical discussion. It does not provide medical diagnoses, treatment plans, or emergency intervention. Always consult a qualified board-certified rheumatologist for medical decisions.
-                </p>
-                <div class="text-right space-y-0.5">
-                    <p>© 2026 Christopher Donalds. All rights reserved.</p>
-                </div>
-            </div>
+        <div class="max-w-5xl mx-auto px-4 flex flex-wrap justify-between items-center gap-3 text-[11px] text-brand-900/75 leading-snug">
+            <p class="max-w-2xl">
+                <strong>Legal & Clinical Notice:</strong> Investigational decision-support interface for personal tracking and clinical discussion only; not medical diagnosis or treatment advice. Consult a qualified rheumatologist for medical decisions.
+            </p>
+            <p class="text-right">© 2026 Christopher Donalds. All rights reserved.</p>
         </div>
     </footer>
 </body>
