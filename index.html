@@ -39,21 +39,21 @@
         svg { max-width: 100%; max-height: 100%; }
     </style>
 </head>
-<body class="bg-brand-25 text-slate-800 antialiased font-sans min-h-screen flex flex-col justify-between">
+<body class="bg-brand-25 text-slate-800 antialiased font-sans min-h-screen flex flex-col justify-between overflow-x-hidden">
 
-    <main class="flex-grow flex items-center justify-center px-4 py-5">
-        <div class="w-full max-w-2xl lg:max-w-3xl bg-white border border-brand-200 rounded-xl shadow-elevated-purple p-6 sm:p-7">
+    <main class="flex-grow flex items-center justify-center px-3 sm:px-4 py-5 sm:py-8">
+        <div class="w-full max-w-2xl lg:max-w-3xl bg-white border border-brand-200 rounded-xl shadow-elevated-purple p-4 sm:p-7 min-w-0">
 
             <div class="text-center mb-4">
-                <span class="text-[11px] font-bold uppercase tracking-widest text-brand-800 bg-brand-100 border border-brand-300 rounded-full px-3 py-0.5 inline-block mb-2">
+                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-brand-800 bg-brand-100 border border-brand-300 rounded-full px-3 py-0.5 inline-block mb-2">
                     Patient & Clinician Analytics Portal
                 </span>
-                <h1 class="text-xl font-bold uppercase tracking-wider text-brand-950" id="auth-title">Sign In</h1>
+                <h1 class="text-lg sm:text-xl font-bold uppercase tracking-wider text-brand-950" id="auth-title">Sign In</h1>
                 <p class="text-xs text-brand-800 mt-0.5" id="auth-sub">Access your longitudinal flare metrics and trigger analysis.</p>
             </div>
 
             <!-- Browser Storage Notice -->
-            <div class="bg-brand-50/80 border border-brand-200 rounded-lg px-3.5 py-2 mb-4 text-[11px] text-brand-900 leading-snug">
+            <div class="bg-brand-50/80 border border-brand-200 rounded-lg px-3.5 py-2.5 mb-4 text-[11px] text-brand-900 leading-relaxed">
                 <strong>Browser Prototype Notice:</strong> Accounts and health logs are stored locally in this browser's <code>localStorage</code> for demonstration purposes only. Do not enter real Protected Health Information (PHI).
             </div>
 
@@ -62,48 +62,48 @@
 
             <!-- Demo Guest Fast-Track -->
             <div class="bg-brand-50 border border-brand-200 rounded-lg p-3.5 mb-4 shadow-subtle-purple flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <div class="text-left">
+                <div class="text-left min-w-0">
                     <span class="text-[11px] font-bold uppercase tracking-wider text-brand-900 block">Portfolio & Clinical Review</span>
-                    <p class="text-xs text-brand-900/80">Instant preview pre-populated with 60 days of synthetic multi-factor correlations.</p>
+                    <p class="text-xs text-brand-900/80 leading-snug mt-0.5">Instant preview pre-populated with 60 days of synthetic multi-factor correlations.</p>
                 </div>
-                <button type="button" onclick="loginAsDemoGuest()" class="sm:shrink-0 px-4 py-2 bg-brand-100 hover:bg-brand-200 border border-brand-300 rounded-lg text-brand-950 text-xs font-bold uppercase tracking-wider shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+                <button type="button" onclick="loginAsDemoGuest()" class="w-full sm:w-auto sm:shrink-0 px-4 py-2.5 sm:py-2 bg-brand-100 hover:bg-brand-200 border border-brand-300 rounded-lg text-brand-950 text-xs font-bold uppercase tracking-wider shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                     Explore as Demo Guest
                 </button>
             </div>
 
             <div class="relative flex py-1.5 items-center mb-4">
                 <div class="flex-grow border-t border-brand-200"></div>
-                <span class="flex-shrink mx-3 text-[11px] uppercase font-bold tracking-widest text-brand-700">Or Continue With Local Profile</span>
+                <span class="flex-shrink mx-2.5 sm:mx-3 text-[10px] sm:text-[11px] uppercase font-bold tracking-wider sm:tracking-widest text-brand-700 text-center">Or Continue With Local Profile</span>
                 <div class="flex-grow border-t border-brand-200"></div>
             </div>
 
-            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
-                <div id="field-name" class="hidden">
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+                <div id="field-name" class="hidden min-w-0">
                     <label for="input-name" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Display Name</label>
-                    <input type="text" id="input-name" autocomplete="name" placeholder="e.g. Alex Rivera" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                    <input type="text" id="input-name" autocomplete="name" placeholder="e.g. Alex Rivera" class="w-full min-w-0 border border-brand-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                 </div>
 
-                <div id="field-dob" class="hidden">
+                <div id="field-dob" class="hidden min-w-0">
                     <label for="input-dob" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Date of Birth (Optional)</label>
-                    <input type="date" id="input-dob" autocomplete="bday" value="1990-01-15" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                    <input type="date" id="input-dob" autocomplete="bday" value="1990-01-15" class="w-full min-w-0 border border-brand-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div class="min-w-0">
                         <label for="input-email" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Email Address</label>
-                        <input type="email" id="input-email" required autocomplete="email" placeholder="user@example.com" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                        <input type="email" id="input-email" required autocomplete="email" placeholder="user@example.com" class="w-full min-w-0 border border-brand-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                     </div>
 
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
+                    <div class="min-w-0">
+                        <div class="flex justify-between items-center mb-1 gap-2">
                             <label for="input-password" class="text-xs font-bold uppercase tracking-wider text-brand-900">Password</label>
-                            <button type="button" id="label-forgot" class="text-[11px] font-semibold text-brand-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" onclick="simulateForgotPassword()">Forgot?</button>
+                            <button type="button" id="label-forgot" class="text-[11px] font-semibold text-brand-700 hover:underline py-0.5 px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" onclick="simulateForgotPassword()">Forgot?</button>
                         </div>
-                        <input type="password" id="input-password" required minlength="6" autocomplete="current-password" placeholder="Minimum 6 characters" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                        <input type="password" id="input-password" required minlength="6" autocomplete="current-password" placeholder="Minimum 6 characters" class="w-full min-w-0 border border-brand-300 rounded-lg px-3 py-2 text-base sm:text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                     </div>
                 </div>
 
-                <button type="submit" id="btn-submit" class="w-full py-2.5 bg-brand-700 hover:bg-brand-800 rounded-lg text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+                <button type="submit" id="btn-submit" class="w-full py-3 sm:py-2.5 bg-brand-700 hover:bg-brand-800 rounded-lg text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                     Sign In
                 </button>
             </form>
@@ -111,7 +111,7 @@
             <div class="text-center mt-4 pt-3 border-t border-brand-100">
                 <p class="text-xs text-brand-900/80">
                     <span id="auth-switch-prompt">Don't have an account?</span>
-                    <button type="button" onclick="toggleAuthMode()" class="font-bold text-brand-800 hover:underline ml-1 uppercase tracking-wider text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" id="auth-switch-btn">
+                    <button type="button" onclick="toggleAuthMode()" class="font-bold text-brand-800 hover:underline ml-1 py-1 px-1.5 uppercase tracking-wider text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" id="auth-switch-btn">
                         Register
                     </button>
                 </p>
@@ -314,11 +314,11 @@
     </script>
 
     <footer class="bg-white border-t border-brand-200 py-5 text-xs text-brand-900/80 no-print">
-        <div class="max-w-5xl mx-auto px-4 flex flex-wrap justify-between items-center gap-3 text-[11px] text-brand-900/75 leading-snug">
+        <div class="max-w-5xl mx-auto px-3 sm:px-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 text-[11px] text-brand-900/75 leading-relaxed">
             <p class="max-w-2xl">
                 <strong>Legal & Clinical Notice:</strong> Investigational decision-support interface for personal tracking and clinical discussion only; not medical diagnosis or treatment advice. Consult a qualified rheumatologist for medical decisions.
             </p>
-            <p class="text-right">© 2026 Christopher Donalds. All rights reserved.</p>
+            <p class="text-left sm:text-right shrink-0">© 2026 Christopher Donalds. All rights reserved.</p>
         </div>
     </footer>
 </body>
