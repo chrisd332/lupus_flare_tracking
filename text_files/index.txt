@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Access | Lupus Flare Tracker</title>
-    <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -36,72 +35,83 @@
             }
         }
     </script>
+    <style>
+        svg { max-width: 100%; max-height: 100%; }
+    </style>
 </head>
 <body class="bg-brand-25 text-slate-800 antialiased font-sans min-h-screen flex flex-col justify-between">
 
-    <!-- Main Authentication Container -->
-    <main class="flex-grow flex items-center justify-center px-4 py-12">
-        <div class="w-full max-w-md bg-white border border-brand-200 shadow-elevated-purple p-8">
-            
-            <!-- Header Badges -->
-            <div class="text-center mb-6">
-                <span class="text-[10px] font-bold uppercase tracking-widest text-brand-700 bg-brand-100 border border-brand-300 px-3 py-1 inline-block mb-3">
-                    Secure Patient & Clinician Portal
+    <main class="flex-grow flex items-center justify-center px-4 py-5">
+        <div class="w-full max-w-2xl lg:max-w-3xl bg-white border border-brand-200 rounded-xl shadow-elevated-purple p-6 sm:p-7">
+
+            <div class="text-center mb-4">
+                <span class="text-[11px] font-bold uppercase tracking-widest text-brand-800 bg-brand-100 border border-brand-300 rounded-full px-3 py-0.5 inline-block mb-2">
+                    Patient & Clinician Analytics Portal
                 </span>
-                <h2 class="text-xl font-bold uppercase tracking-wider text-brand-950" id="auth-title">Sign In</h2>
-                <p class="text-xs text-brand-800/70 mt-1" id="auth-sub">Access your personal health metrics and longitudinal trigger analysis.</p>
+                <h1 class="text-xl font-bold uppercase tracking-wider text-brand-950" id="auth-title">Sign In</h1>
+                <p class="text-xs text-brand-800 mt-0.5" id="auth-sub">Access your longitudinal flare metrics and trigger analysis.</p>
             </div>
 
-            <!-- Error / Notification Box -->
-            <div id="auth-alert" class="hidden p-3 border mb-5 text-xs font-semibold"></div>
+            <!-- Browser Storage Notice -->
+            <div class="bg-brand-50/80 border border-brand-200 rounded-lg px-3.5 py-2 mb-4 text-[11px] text-brand-900 leading-snug">
+                <strong>Browser Prototype Notice:</strong> Accounts and health logs are stored locally in this browser's <code>localStorage</code> for demonstration purposes only. Do not enter real Protected Health Information (PHI).
+            </div>
 
-            <!-- Demo Guest Fast-Track Box -->
-            <div class="bg-brand-50 border border-brand-200 p-4 mb-6 shadow-subtle-purple text-center">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-brand-800 block mb-1">Portfolio & Clinical Review</span>
-                <p class="text-xs text-brand-900/80 mb-3">Instant preview pre-populated with 60 days of clinical sample correlations.</p>
-                <button type="button" onclick="loginAsDemoGuest()" class="w-full py-2.5 bg-brand-100 hover:bg-brand-200 border border-brand-300 text-brand-900 text-xs font-bold uppercase tracking-wider shadow-subtle-purple transition">
+            <!-- Non-Blocking Status / Error Box -->
+            <div id="auth-alert" role="status" aria-live="polite" class="hidden p-2.5 border rounded-lg mb-4 text-xs font-semibold"></div>
+
+            <!-- Demo Guest Fast-Track -->
+            <div class="bg-brand-50 border border-brand-200 rounded-lg p-3.5 mb-4 shadow-subtle-purple flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="text-left">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-brand-900 block">Portfolio & Clinical Review</span>
+                    <p class="text-xs text-brand-900/80">Instant preview pre-populated with 60 days of synthetic multi-factor correlations.</p>
+                </div>
+                <button type="button" onclick="loginAsDemoGuest()" class="sm:shrink-0 px-4 py-2 bg-brand-100 hover:bg-brand-200 border border-brand-300 rounded-lg text-brand-950 text-xs font-bold uppercase tracking-wider shadow-subtle-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                     Explore as Demo Guest
                 </button>
             </div>
 
-            <div class="relative flex py-2 items-center mb-6">
+            <div class="relative flex py-1.5 items-center mb-4">
                 <div class="flex-grow border-t border-brand-200"></div>
-                <span class="flex-shrink mx-3 text-[10px] uppercase font-bold tracking-widest text-brand-500">Or Continue With Account</span>
+                <span class="flex-shrink mx-3 text-[11px] uppercase font-bold tracking-widest text-brand-700">Or Continue With Local Profile</span>
                 <div class="flex-grow border-t border-brand-200"></div>
             </div>
 
-            <!-- Auth Form -->
-            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                <!-- Name Field (Visible only in Register Mode) -->
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
                 <div id="field-name" class="hidden">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Full Legal Name</label>
-                    <input type="text" id="input-name" placeholder="e.g. Jane Doe" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                    <label for="input-name" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Display Name</label>
+                    <input type="text" id="input-name" autocomplete="name" placeholder="e.g. Alex Rivera" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Email Address</label>
-                    <input type="email" id="input-email" required placeholder="user@domain.com" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+                <div id="field-dob" class="hidden">
+                    <label for="input-dob" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Date of Birth (Optional)</label>
+                    <input type="date" id="input-dob" autocomplete="bday" value="1990-01-15" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                 </div>
 
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <label class="text-xs font-bold uppercase tracking-wider text-brand-900">Password</label>
-                        <span id="label-forgot" class="text-[10px] text-brand-600 hover:underline cursor-pointer" onclick="alert('Password reset instructions have been simulated to your email.')">Forgot?</span>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="input-email" class="block text-xs font-bold uppercase tracking-wider text-brand-900 mb-1">Email Address</label>
+                        <input type="email" id="input-email" required autocomplete="email" placeholder="user@example.com" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
                     </div>
-                    <input type="password" id="input-password" required placeholder="••••••••" class="w-full border border-brand-300 p-2 text-sm bg-white shadow-inner focus:border-brand-600 outline-none">
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="input-password" class="text-xs font-bold uppercase tracking-wider text-brand-900">Password</label>
+                            <button type="button" id="label-forgot" class="text-[11px] font-semibold text-brand-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" onclick="simulateForgotPassword()">Forgot?</button>
+                        </div>
+                        <input type="password" id="input-password" required minlength="6" autocomplete="current-password" placeholder="Minimum 6 characters" class="w-full border border-brand-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-brand-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500">
+                    </div>
                 </div>
 
-                <!-- Submit Button -->
-                <button type="submit" id="btn-submit" class="w-full py-3 bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition mt-2">
+                <button type="submit" id="btn-submit" class="w-full py-2.5 bg-brand-700 hover:bg-brand-800 rounded-lg text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
                     Sign In
                 </button>
             </form>
 
-            <!-- Mode Switcher -->
-            <div class="text-center mt-6 pt-4 border-t border-brand-100">
-                <p class="text-xs text-brand-800/80" id="auth-switch-text">
-                    Don't have an account? 
-                    <button type="button" onclick="toggleAuthMode()" class="font-bold text-brand-700 hover:underline ml-1 uppercase tracking-wider text-[11px]" id="auth-switch-btn">
+            <div class="text-center mt-4 pt-3 border-t border-brand-100">
+                <p class="text-xs text-brand-900/80">
+                    <span id="auth-switch-prompt">Don't have an account?</span>
+                    <button type="button" onclick="toggleAuthMode()" class="font-bold text-brand-800 hover:underline ml-1 uppercase tracking-wider text-[11px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded" id="auth-switch-btn">
                         Register
                     </button>
                 </p>
@@ -109,39 +119,44 @@
         </div>
     </main>
 
-    <!-- JavaScript Layer: Account Management & Guest Seeding -->
     <script>
         let isRegisterMode = false;
 
         function toggleAuthMode() {
             isRegisterMode = !isRegisterMode;
             const nameField = document.getElementById('field-name');
+            const dobField = document.getElementById('field-dob');
             const authTitle = document.getElementById('auth-title');
             const authSub = document.getElementById('auth-sub');
             const btnSubmit = document.getElementById('btn-submit');
-            const switchText = document.getElementById('auth-switch-text');
+            const switchPrompt = document.getElementById('auth-switch-prompt');
             const switchBtn = document.getElementById('auth-switch-btn');
             const forgotLabel = document.getElementById('label-forgot');
+            const passwordInput = document.getElementById('input-password');
             const alertBox = document.getElementById('auth-alert');
 
             alertBox.classList.add('hidden');
 
             if (isRegisterMode) {
                 nameField.classList.remove('hidden');
+                dobField.classList.remove('hidden');
                 document.getElementById('input-name').required = true;
+                passwordInput.setAttribute('autocomplete', 'new-password');
                 authTitle.innerText = "Register";
-                authSub.innerText = "Create a dedicated profile for multi-factor trigger tracking.";
-                btnSubmit.innerText = "Create Account";
-                switchText.childNodes[0].nodeValue = "Already have an account? ";
+                authSub.innerText = "Create a local browser profile for multi-factor trigger tracking.";
+                btnSubmit.innerText = "Create Local Profile";
+                switchPrompt.innerText = "Already have an account?";
                 switchBtn.innerText = "Sign In";
                 if (forgotLabel) forgotLabel.classList.add('hidden');
             } else {
                 nameField.classList.add('hidden');
+                dobField.classList.add('hidden');
                 document.getElementById('input-name').required = false;
+                passwordInput.setAttribute('autocomplete', 'current-password');
                 authTitle.innerText = "Sign In";
-                authSub.innerText = "Access your personal health metrics and longitudinal trigger analysis.";
+                authSub.innerText = "Access your longitudinal flare metrics and trigger analysis.";
                 btnSubmit.innerText = "Sign In";
-                switchText.childNodes[0].nodeValue = "Don't have an account? ";
+                switchPrompt.innerText = "Don't have an account?";
                 switchBtn.innerText = "Register";
                 if (forgotLabel) forgotLabel.classList.remove('hidden');
             }
@@ -149,11 +164,15 @@
 
         function showAlert(msg, isError = true) {
             const el = document.getElementById('auth-alert');
-            el.className = isError 
-                ? "p-3 border border-rose-300 bg-rose-50 text-rose-800 mb-5 text-xs font-semibold"
-                : "p-3 border border-emerald-300 bg-emerald-50 text-emerald-800 mb-5 text-xs font-semibold";
+            el.className = isError
+                ? "p-2.5 border border-rose-300 bg-rose-50 text-rose-900 rounded-lg mb-4 text-xs font-semibold"
+                : "p-2.5 border border-emerald-300 bg-emerald-50 text-emerald-900 rounded-lg mb-4 text-xs font-semibold";
             el.innerText = msg;
             el.classList.remove('hidden');
+        }
+
+        function simulateForgotPassword() {
+            showAlert("Demo Mode: Local browser profiles do not use email servers. Register a new local profile or click 'Explore as Demo Guest'.", false);
         }
 
         function handleAuthSubmit(e) {
@@ -161,160 +180,145 @@
             const email = document.getElementById('input-email').value.trim().toLowerCase();
             const password = document.getElementById('input-password').value;
             const name = document.getElementById('input-name') ? document.getElementById('input-name').value.trim() : "";
+            const dob = document.getElementById('input-dob') ? document.getElementById('input-dob').value : "1990-01-15";
 
             const accounts = JSON.parse(localStorage.getItem('lupus_users') || '[]');
 
             if (isRegisterMode) {
-                // Registration Logic
                 if (accounts.some(u => u.email === email)) {
-                    showAlert("An account with this email address already exists.");
+                    showAlert("A local profile with this email address already exists.");
                     return;
                 }
 
                 const newUser = {
-                    name: name || "Jane Doe",
+                    name: name || "Patient User",
+                    dob: dob || "1990-01-15",
                     email: email,
                     password: password
                 };
                 accounts.push(newUser);
                 localStorage.setItem('lupus_users', JSON.stringify(accounts));
-                
-                // Set active session
-                localStorage.setItem('lupus_active_user', JSON.stringify({ 
-                    name: newUser.name, 
-                    email: newUser.email, 
-                    isGuest: false 
+
+                localStorage.setItem('lupus_active_user', JSON.stringify({
+                    name: newUser.name,
+                    dob: newUser.dob,
+                    email: newUser.email,
+                    isGuest: false
                 }));
 
-                // IMPORTANT: Initialize clean, empty records for this specific new user
-                const userStorageKey = `lupus_records_${email}`;
-                localStorage.setItem(userStorageKey, JSON.stringify([]));
-                
-                showAlert("Account created successfully. Loading empty dashboard...", false);
-                setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 700);
+                localStorage.setItem(`lupus_records_${email}`, JSON.stringify([]));
+                showAlert("Local profile created. Loading empty dashboard...", false);
+                setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 600);
             } else {
-                // Sign-in Logic
                 const user = accounts.find(u => u.email === email && u.password === password);
                 if (user) {
-                    localStorage.setItem('lupus_active_user', JSON.stringify({ 
-                        name: user.name, 
-                        email: user.email, 
-                        isGuest: false 
+                    localStorage.setItem('lupus_active_user', JSON.stringify({
+                        name: user.name,
+                        dob: user.dob || "1990-01-15",
+                        email: user.email,
+                        isGuest: false
                     }));
-                    showAlert("Authentication verified. Redirecting...", false);
-                    setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 500);
+                    showAlert("Verified. Redirecting to dashboard...", false);
+                    setTimeout(() => { window.location.href = "tracking_analytics.html"; }, 450);
                 } else {
-                    showAlert("Invalid email address or password. Try registering or explore as Demo Guest.");
+                    showAlert("Invalid credentials for this browser. Register a local profile or explore as Demo Guest.");
                 }
             }
         }
 
-        // Fast-Track Demo Guest Login
+        function generateGuestDemoRecords(days = 60) {
+            const data = [];
+            const today = new Date();
+            for (let i = days - 1; i >= 0; i--) {
+                const dt = new Date();
+                dt.setDate(today.getDate() - i);
+                const dtStr = dt.toISOString().split('T')[0];
+
+                const uv = parseFloat((Math.random() * 8 + 2).toFixed(1));
+                const pDelta = parseFloat((Math.random() * 8 + 1).toFixed(1));
+                const garlic = Math.random() > 0.85 ? 1 : 0;
+                const alcohol = Math.random() > 0.8 ? 1 : 0;
+                const sleep = parseFloat((Math.random() * 3 + 5.5).toFixed(1));
+
+                const actRoll = Math.random();
+                let actLevel = "none";
+                let actMins = 0;
+                let overexert = 0;
+                if (actRoll > 0.75) { actLevel = "high"; actMins = 60; overexert = 1; }
+                else if (actRoll > 0.5) { actLevel = "moderate"; actMins = 45; }
+                else if (actRoll > 0.25) { actLevel = "light"; actMins = 30; }
+
+                const isStrenuous = (actLevel === 'high' || overexert === 1) ? 1 : 0;
+                const sodium = Math.round(Math.random() * 1600 + 1500);
+                const cholesterol = Math.round(Math.random() * 250 + 110);
+                const satFat = Math.round(Math.random() * 18 + 10);
+                const sugar = Math.round(Math.random() * 32 + 12);
+                const fiber = Math.round(Math.random() * 16 + 14);
+                const potassium = Math.round(Math.random() * 1400 + 2000);
+
+                let pain = Math.floor(Math.random() * 3) + 2;
+                const lag2 = data[data.length - 2];
+                if (lag2 && (lag2.max_uv > 7.5 || lag2.strenuous_activity === 1 || lag2.garlic === 1)) {
+                    pain += 5;
+                }
+                pain = Math.min(10, pain);
+
+                let mealDesc = "Oatmeal with berries, turkey avocado wrap, grilled salmon with broccoli";
+                if (garlic) mealDesc = "Garlic pasta, caesar salad, garlic bread";
+                else if (alcohol) mealDesc = "Steak dinner, baked potato with butter, 2 glasses wine";
+                else if (sodium > 2600) mealDesc = "Double cheeseburger, french fries, soda";
+
+                data.push({
+                    date: dtStr,
+                    pain_score: pain,
+                    fatigue_score: Math.min(10, pain + Math.floor(Math.random() * 2)),
+                    flare_active: pain >= 6 ? 1 : 0,
+                    sleep_hours: sleep,
+                    activity_level: actLevel,
+                    activity_minutes: actMins,
+                    overexertion: overexert,
+                    strenuous_activity: isStrenuous,
+                    meals_logged: mealDesc,
+                    max_uv: uv,
+                    pressure_delta: pDelta,
+                    sodium_mg: sodium,
+                    cholesterol_mg: cholesterol,
+                    sat_fat_g: satFat,
+                    sugar_g: sugar,
+                    fiber_g: fiber,
+                    potassium_mg: potassium,
+                    garlic: garlic,
+                    alcohol: alcohol
+                });
+            }
+            return data;
+        }
+
         function loginAsDemoGuest() {
             const guestEmail = "guest@clinical-demo.org";
             localStorage.setItem('lupus_active_user', JSON.stringify({
-                name: "Jane Doe (Demo Guest)",
+                name: "Sample Patient (Demo Guest)",
+                dob: "1990-01-15",
                 email: guestEmail,
                 isGuest: true
             }));
 
             const guestKey = `lupus_records_${guestEmail}`;
             const existing = JSON.parse(localStorage.getItem(guestKey) || '[]');
-            
-            // Seed 60 days into the guest key ONLY
             if (existing.length === 0) {
-                const data = [];
-                const today = new Date();
-                for (let i = 59; i >= 0; i--) {
-                    const dt = new Date();
-                    dt.setDate(today.getDate() - i);
-                    const dtStr = dt.toISOString().split('T')[0];
-
-                    const uv = parseFloat((Math.random() * 8 + 2).toFixed(1));
-                    const pDelta = parseFloat((Math.random() * 8 + 1).toFixed(1));
-                    const garlic = Math.random() > 0.85 ? 1 : 0;
-                    const alcohol = Math.random() > 0.8 ? 1 : 0;
-                    const sleep = parseFloat((Math.random() * 3 + 5.5).toFixed(1));
-
-                    const actRoll = Math.random();
-                    let actLevel = "none";
-                    let actMins = 0;
-                    let overexert = 0;
-                    if (actRoll > 0.75) { actLevel = "high"; actMins = 60; overexert = 1; }
-                    else if (actRoll > 0.5) { actLevel = "moderate"; actMins = 45; }
-                    else if (actRoll > 0.25) { actLevel = "light"; actMins = 30; }
-
-                    const isStrenuous = (actLevel === 'high' || overexert === 1) ? 1 : 0;
-                    const sodium = Math.round(Math.random() * 1600 + 1500);
-                    const cholesterol = Math.round(Math.random() * 250 + 110);
-                    const satFat = Math.round(Math.random() * 18 + 10);
-                    const sugar = Math.round(Math.random() * 32 + 12);
-                    const fiber = Math.round(Math.random() * 16 + 14);
-                    const potassium = Math.round(Math.random() * 1400 + 2000);
-
-                    let pain = Math.floor(Math.random() * 3) + 2;
-                    if (i <= 57 && (data[data.length - 2]?.max_uv > 7.5 || data[data.length - 2]?.strenuous_activity === 1 || data[data.length - 2]?.garlic === 1)) {
-                        pain += 5;
-                    }
-                    pain = Math.min(10, pain);
-
-                    let mealDesc = "Oatmeal with berries, turkey wrap, grilled salmon with broccoli";
-                    if (garlic) mealDesc = "Garlic pasta, caesar salad, garlic bread";
-                    else if (alcohol) mealDesc = "Steak dinner, baked potato with butter, red wine";
-                    else if (sodium > 2600) mealDesc = "Cheeseburger, french fries, soda";
-
-                    data.push({
-                        date: dtStr,
-                        pain_score: pain,
-                        fatigue_score: Math.min(10, pain + Math.floor(Math.random() * 2)),
-                        flare_active: pain >= 6 ? 1 : 0,
-                        sleep_hours: sleep,
-                        activity_level: actLevel,
-                        activity_minutes: actMins,
-                        overexertion: overexert,
-                        strenuous_activity: isStrenuous,
-                        meals_logged: mealDesc,
-                        max_uv: uv,
-                        pressure_delta: pDelta,
-                        sodium_mg: sodium,
-                        cholesterol_mg: cholesterol,
-                        sat_fat_g: satFat,
-                        sugar_g: sugar,
-                        fiber_g: fiber,
-                        potassium_mg: potassium,
-                        garlic: garlic,
-                        alcohol: alcohol
-                    });
-                }
-                localStorage.setItem(guestKey, JSON.stringify(data));
+                localStorage.setItem(guestKey, JSON.stringify(generateGuestDemoRecords(60)));
             }
 
             window.location.href = "tracking_analytics.html";
         }
     </script>
-    <!-- Licensing, Trademark & Clinical Governance Footer -->
-    <footer class="bg-white border-t border-brand-200 mt-12 py-8 text-xs text-brand-900/80 no-print">
-        <div class="max-w-6xl mx-auto px-4 space-y-4">
-            <div class="flex flex-wrap justify-between items-center gap-4 pb-4 border-b border-brand-100">
-                <div class="space-y-1">
-                    <p class="font-bold uppercase tracking-wider text-brand-950 text-[11px]">
-                        Lupus Flare Tracker & Early Warning Engine™
-                    </p>
-                    <p class="text-[11px] text-brand-700">
-                        Longitudinal Multi-Factor Autoimmune Decision Support & Analytics Platform
-                    </p>
-                </div>
-            </div>
 
-            <div class="flex flex-wrap justify-between items-start gap-4 text-[10px] text-brand-800/70 leading-relaxed">
-                <p class="max-w-2xl">
-                    <strong>Legal & Clinical Notice:</strong> Lupus Flare Tracker™ is an investigational decision-support interface intended for personal monitoring and clinical discussion. It does not provide medical diagnoses, treatment plans, or emergency intervention. Always consult a qualified board-certified rheumatologist for medical decisions.
-                </p>
-                <div class="text-right space-y-0.5">
-                    <p>© 2026 Christopher Donalds. All rights reserved.</p>
-                    <p>Trademarks and registered marks are property of their respective holders.</p>
-                </div>
-            </div>
+    <footer class="bg-white border-t border-brand-200 py-5 text-xs text-brand-900/80 no-print">
+        <div class="max-w-5xl mx-auto px-4 flex flex-wrap justify-between items-center gap-3 text-[11px] text-brand-900/75 leading-snug">
+            <p class="max-w-2xl">
+                <strong>Legal & Clinical Notice:</strong> Investigational decision-support interface for personal tracking and clinical discussion only; not medical diagnosis or treatment advice. Consult a qualified rheumatologist for medical decisions.
+            </p>
+            <p class="text-right">© 2026 Christopher Donalds. All rights reserved.</p>
         </div>
     </footer>
 </body>
