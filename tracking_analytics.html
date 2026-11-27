@@ -39,6 +39,14 @@
     <style>
         svg.icon-sm { width: 14px; height: 14px; flex-shrink: 0; }
         svg.icon-md { width: 16px; height: 16px; flex-shrink: 0; }
+        @keyframes pulseRing {
+            0% { transform: scale(0.96); opacity: 0.55; }
+            70% { transform: scale(1.16); opacity: 0; }
+            100% { transform: scale(1.16); opacity: 0; }
+        }
+        .circle-pulse-ring {
+            animation: pulseRing 2.6s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+        }
         @media print {
             .no-print { display: none !important; }
             body { background: #FFFFFF !important; font-size: 10pt; color: #231A30 !important; }
@@ -140,145 +148,195 @@
                 </div>
             </div>
 
-            <div class="bg-white p-4 sm:p-6 border border-brand-200 rounded-xl shadow-card-purple space-y-5 sm:space-y-6">
-                <div class="border-b border-brand-100 pb-3 flex flex-wrap justify-between items-start sm:items-center gap-2">
-                    <div>
-                        <h2 class="text-sm font-bold uppercase tracking-wider text-brand-950">Daily Flare Check-In</h2>
-                        <p class="text-xs text-brand-800 mt-0.5">Sub-minute check-in designed to monitor disease activity without user fatigue.</p>
-                    </div>
-                    <span class="text-[11px] font-bold text-brand-900 bg-brand-100 px-3 py-1 rounded-full border border-brand-300 uppercase tracking-wider shrink-0">5 Questions</span>
-                </div>
+            <!-- Centered Circle Questionnaire Launcher -->
+            <div class="bg-white border border-brand-200 rounded-2xl shadow-card-purple px-5 py-10 sm:py-14 flex flex-col items-center justify-center text-center">
+                <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-brand-800 bg-brand-100 border border-brand-300 rounded-full px-3 py-1 mb-3">
+                    Daily Check-In • 5 Core Prompts
+                </span>
+                <h2 class="text-lg sm:text-xl font-bold uppercase tracking-wider text-brand-950">Ready for Today's Check-In?</h2>
+                <p class="text-xs sm:text-sm text-brand-800 max-w-md mt-1.5 mb-8 leading-relaxed">
+                    Tap the circle below to log pain, fatigue, sleep, and optional exercise or meals in a focused view.
+                </p>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                    <div class="bg-brand-50/60 border-l-4 border-l-brand-600 rounded-r-lg p-3.5 sm:p-4 min-w-0">
-                        <label for="input-date" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1.5">1. Date</label>
-                        <input type="date" id="input-date" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white tabular-nums focus:border-brand-600 outline-none">
-                    </div>
-
-                    <div class="bg-brand-50/60 border-l-4 border-l-brand-600 rounded-r-lg p-3.5 sm:p-4 min-w-0">
-                        <label for="input-sleep" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1.5">2. Sleep Duration (Last Night)</label>
-                        <input type="number" step="0.5" id="input-sleep" value="7.5" min="0" max="24" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white tabular-nums focus:border-brand-600 outline-none">
-                        <span class="text-[11px] text-brand-900/75 mt-1 block">Total estimated hours of restorative sleep</span>
-                    </div>
-
-                    <div class="bg-brand-50/60 border-l-4 border-l-brand-700 rounded-r-lg p-3.5 sm:p-4 min-w-0">
-                        <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
-                            <label for="input-pain" class="text-xs font-bold text-brand-900 uppercase tracking-wider">3. Joint & Body Pain Level</label>
-                            <div class="flex items-center gap-1.5">
-                                <span id="pill-pain" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 text-brand-900 border border-brand-300">Mild</span>
-                                <span id="label-pain" class="text-xs font-bold text-brand-950 bg-white px-2.5 py-0.5 rounded-full border border-brand-300 tabular-nums">3 / 10</span>
-                            </div>
-                        </div>
-                        <input type="range" id="input-pain" min="0" max="10" value="3" class="w-full h-2.5 sm:h-2 bg-brand-200 rounded-lg appearance-none cursor-pointer accent-brand-700" oninput="updateScaleReadout('pain', this.value)">
-                        <div class="flex justify-between text-[11px] text-slate-600 mt-1.5">
-                            <span>0 (No Pain)</span>
-                            <span>5 (Moderate)</span>
-                            <span>10 (Severe)</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-brand-50/60 border-l-4 border-l-brand-600 rounded-r-lg p-3.5 sm:p-4 min-w-0">
-                        <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
-                            <label for="input-fatigue" class="text-xs font-bold text-brand-900 uppercase tracking-wider">4. Fatigue / Energy Depletion</label>
-                            <div class="flex items-center gap-1.5">
-                                <span id="pill-fatigue" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 text-brand-900 border border-brand-300">Moderate</span>
-                                <span id="label-fatigue" class="text-xs font-bold text-brand-950 bg-white px-2.5 py-0.5 rounded-full border border-brand-300 tabular-nums">4 / 10</span>
-                            </div>
-                        </div>
-                        <input type="range" id="input-fatigue" min="0" max="10" value="4" class="w-full h-2.5 sm:h-2 bg-brand-200 rounded-lg appearance-none cursor-pointer accent-brand-700" oninput="updateScaleReadout('fatigue', this.value)">
-                        <div class="flex justify-between text-[11px] text-slate-600 mt-1.5">
-                            <span>0 (Full Energy)</span>
-                            <span>5 (Sluggish)</span>
-                            <span>10 (Severe Fatigue)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="p-3.5 sm:p-4 bg-brand-100/70 border border-brand-300 border-l-4 border-l-brand-800 rounded-lg flex items-start sm:items-center space-x-3">
-                    <input type="checkbox" id="input-flare" class="w-4 h-4 mt-0.5 sm:mt-0 shrink-0 rounded text-brand-700 focus:ring-brand-700 accent-brand-700">
-                    <div>
-                        <label for="input-flare" class="text-xs font-bold uppercase tracking-wider text-brand-950 cursor-pointer">5. Are you experiencing an active lupus flare today?</label>
-                        <p class="text-xs text-brand-900/80 mt-0.5">Check this box if today marks an acute symptom spike compared to your normal baseline.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white p-4 sm:p-6 border border-brand-200 rounded-xl shadow-card-purple">
-                <details class="cursor-pointer group">
-                    <summary class="font-bold text-xs uppercase tracking-wider text-brand-950 select-none flex flex-col sm:flex-row sm:items-center justify-between gap-2 list-none">
-                        <span class="inline-flex items-start sm:items-center gap-2">
-                            <svg class="icon-md text-brand-700 mt-0.5 sm:mt-0" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            <span>Optional: Exercise & Physical Strain (Mechanical Impact & Overexertion)</span>
+                <div class="relative flex items-center justify-center">
+                    <span class="circle-pulse-ring absolute w-40 h-40 sm:w-44 sm:h-44 rounded-full bg-brand-300/60 pointer-events-none" aria-hidden="true"></span>
+                    <button
+                        type="button"
+                        id="btn-open-questionnaire"
+                        onclick="openQuestionnaireModal()"
+                        aria-label="Start Daily Flare Questionnaire"
+                        class="relative z-10 w-40 h-40 sm:w-44 sm:h-44 rounded-full bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 hover:from-brand-500 hover:to-brand-800 active:scale-95 text-white shadow-elevated-purple border-4 border-brand-100 flex flex-col items-center justify-center gap-2 px-4 transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-brand-400">
+                        <svg class="w-8 h-8 text-brand-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        <span class="text-xs sm:text-sm font-bold uppercase tracking-widest leading-tight">Start Check-In</span>
+                        <span id="launcher-status-badge" class="text-[10px] font-semibold uppercase tracking-wider text-brand-100 bg-brand-950/35 px-2.5 py-0.5 rounded-full">
+                            Guided Mode
                         </span>
-                        <span class="self-start sm:self-auto shrink-0 text-[11px] text-brand-700 font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-brand-50 border border-brand-200">Expand / Collapse</span>
-                    </summary>
-                    <p class="text-xs text-brand-900/80 mt-3 mb-4 border-b border-brand-100 pb-2.5 leading-relaxed">
-                        Physical overexertion or prolonged mechanical strain is a frequent trigger for flare manifestations 24 to 48 hours later.
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="p-3.5 bg-brand-50/70 border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
-                            <label for="activity-level" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Activity Level</label>
-                            <select id="activity-level" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
-                                <option value="none">Rest / Minimal Movement</option>
-                                <option value="light">Light (Walking, gentle stretch, yoga)</option>
-                                <option value="moderate">Moderate (Brisk walk, swim, cycling)</option>
-                                <option value="high">High-Impact (Heavy resistance, HIIT, running)</option>
-                                <option value="labor">Prolonged Labor / Standing All Day</option>
-                            </select>
-                        </div>
-                        <div class="p-3.5 bg-brand-50/70 border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
-                            <label for="activity-minutes" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Duration (Minutes)</label>
-                            <input type="number" id="activity-minutes" value="0" min="0" step="10" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white tabular-nums focus:border-brand-600 outline-none">
-                        </div>
-                        <div class="p-3.5 bg-brand-50/70 border-l-4 border-l-brand-500 rounded-r-lg flex items-center min-w-0">
-                            <input type="checkbox" id="activity-overexertion" class="w-4 h-4 shrink-0 rounded text-brand-700 focus:ring-brand-700 accent-brand-700">
-                            <label for="activity-overexertion" class="ml-2.5 text-xs font-semibold text-brand-950 cursor-pointer">Pushed joints past comfort / Overexerted</label>
-                        </div>
-                    </div>
-                </details>
-            </div>
+                    </button>
+                </div>
 
-            <div class="bg-white p-4 sm:p-6 border border-brand-200 rounded-xl shadow-card-purple">
-                <details class="cursor-pointer group">
-                    <summary class="font-bold text-xs uppercase tracking-wider text-brand-950 select-none flex flex-col sm:flex-row sm:items-center justify-between gap-2 list-none">
-                        <span class="inline-flex items-start sm:items-center gap-2">
-                            <svg class="icon-md text-brand-700 mt-0.5 sm:mt-0" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 12h18M3 18h18" />
-                            </svg>
-                            <span>Optional: Meals & Nutrition (Auto-Parses Major Health Indicators)</span>
-                        </span>
-                        <span class="self-start sm:self-auto shrink-0 text-[11px] text-brand-700 font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-brand-50 border border-brand-200">Expand / Collapse</span>
-                    </summary>
-                    <p class="text-xs text-brand-900/80 mt-3 mb-4 border-b border-brand-100 pb-2.5 leading-relaxed">
-                        Enter meals in natural language. Leave blank if not logging meals today; entered foods compute rolling 30-day nutritional estimates.
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-3.5 bg-brand-50/70 border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
-                            <label for="food-breakfast" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Breakfast</label>
-                            <input type="text" id="food-breakfast" placeholder="e.g. Oatmeal with berries and chia seeds, black coffee" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
-                        </div>
-                        <div class="p-3.5 bg-brand-50/70 border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
-                            <label for="food-lunch" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Lunch</label>
-                            <input type="text" id="food-lunch" placeholder="e.g. Turkey wrap with spinach, apple" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
-                        </div>
-                        <div class="p-3.5 bg-brand-50/70 border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
-                            <label for="food-dinner" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Dinner</label>
-                            <input type="text" id="food-dinner" placeholder="e.g. Grilled salmon, sweet potato, steamed broccoli" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
-                        </div>
-                        <div class="p-3.5 bg-brand-50/70 border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
-                            <label for="food-snacks" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Snacks, Desserts & Beverages</label>
-                            <input type="text" id="food-snacks" placeholder="e.g. Almonds, dark chocolate, herbal tea" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
-                        </div>
-                    </div>
-                </details>
+                <div id="checkin-summary-strip" class="mt-8 pt-4 border-t border-brand-100 w-full max-w-xl flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-brand-900/80 tabular-nums">
+                    <span>Date: <strong id="summary-date" class="text-brand-950">Today</strong></span>
+                    <span class="text-brand-300">•</span>
+                    <span>Sleep: <strong id="summary-sleep" class="text-brand-950">7.5h</strong></span>
+                    <span class="text-brand-300">•</span>
+                    <span>Pain: <strong id="summary-pain" class="text-brand-950">3/10</strong></span>
+                    <span class="text-brand-300">•</span>
+                    <span>Fatigue: <strong id="summary-fatigue" class="text-brand-950">4/10</strong></span>
+                    <span class="text-brand-300">•</span>
+                    <span>Flare: <strong id="summary-flare" class="text-brand-950">No</strong></span>
+                </div>
             </div>
-
-            <button type="button" onclick="saveCurrentEntry()" class="w-full py-3.5 bg-brand-700 hover:bg-brand-800 rounded-xl text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
-                Save Check-in, Analyze Triggers & Ingest Weather
-            </button>
         </section>
+
+        <!-- Questionnaire Modal Overlay -->
+        <div id="questionnaire-modal" role="dialog" aria-modal="true" aria-labelledby="modal-checkin-title" class="hidden fixed inset-0 z-50 bg-brand-950/60 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto no-print">
+            <div class="w-full max-w-3xl bg-white border border-brand-200 rounded-t-2xl sm:rounded-2xl shadow-elevated-purple max-h-[92vh] flex flex-col min-w-0">
+                <div class="px-4 sm:px-6 py-4 border-b border-brand-100 flex items-center justify-between gap-3 shrink-0">
+                    <div>
+                        <h2 id="modal-checkin-title" class="text-sm font-bold uppercase tracking-wider text-brand-950">Daily Flare Check-In</h2>
+                        <p class="text-xs text-brand-800 mt-0.5">Complete core metrics, then expand optional strain or meals before saving.</p>
+                    </div>
+                    <button type="button" onclick="closeQuestionnaireModal()" aria-label="Close questionnaire" class="px-3 py-1.5 rounded-lg border border-brand-200 text-xs font-bold uppercase tracking-wider text-brand-900 hover:bg-brand-50 transition">
+                        Close
+                    </button>
+                </div>
+
+                <div class="p-4 sm:p-6 space-y-5 overflow-y-auto flex-grow">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                        <div class="bg-brand-50/60 border-l-4 border-l-brand-600 rounded-r-lg p-3.5 sm:p-4 min-w-0">
+                            <label for="input-date" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1.5">1. Date</label>
+                            <input type="date" id="input-date" onchange="syncCheckinSummary()" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white tabular-nums focus:border-brand-600 outline-none">
+                        </div>
+
+                        <div class="bg-brand-50/60 border-l-4 border-l-brand-600 rounded-r-lg p-3.5 sm:p-4 min-w-0">
+                            <label for="input-sleep" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1.5">2. Sleep Duration (Last Night)</label>
+                            <input type="number" step="0.5" id="input-sleep" value="7.5" min="0" max="24" oninput="syncCheckinSummary()" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white tabular-nums focus:border-brand-600 outline-none">
+                            <span class="text-[11px] text-brand-900/75 mt-1 block">Total estimated hours of restorative sleep</span>
+                        </div>
+
+                        <div class="bg-brand-50/60 border-l-4 border-l-brand-700 rounded-r-lg p-3.5 sm:p-4 min-w-0">
+                            <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+                                <label for="input-pain" class="text-xs font-bold text-brand-900 uppercase tracking-wider">3. Joint & Body Pain Level</label>
+                                <div class="flex items-center gap-1.5">
+                                    <span id="pill-pain" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 text-brand-900 border border-brand-300">Mild</span>
+                                    <span id="label-pain" class="text-xs font-bold text-brand-950 bg-white px-2.5 py-0.5 rounded-full border border-brand-300 tabular-nums">3 / 10</span>
+                                </div>
+                            </div>
+                            <input type="range" id="input-pain" min="0" max="10" value="3" class="w-full h-2.5 sm:h-2 bg-brand-200 rounded-lg appearance-none cursor-pointer accent-brand-700" oninput="updateScaleReadout('pain', this.value); syncCheckinSummary()">
+                            <div class="flex justify-between text-[11px] text-slate-600 mt-1.5">
+                                <span>0 (No Pain)</span>
+                                <span>5 (Moderate)</span>
+                                <span>10 (Severe)</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-brand-50/60 border-l-4 border-l-brand-600 rounded-r-lg p-3.5 sm:p-4 min-w-0">
+                            <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+                                <label for="input-fatigue" class="text-xs font-bold text-brand-900 uppercase tracking-wider">4. Fatigue / Energy Depletion</label>
+                                <div class="flex items-center gap-1.5">
+                                    <span id="pill-fatigue" class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-brand-100 text-brand-900 border border-brand-300">Moderate</span>
+                                    <span id="label-fatigue" class="text-xs font-bold text-brand-950 bg-white px-2.5 py-0.5 rounded-full border border-brand-300 tabular-nums">4 / 10</span>
+                                </div>
+                            </div>
+                            <input type="range" id="input-fatigue" min="0" max="10" value="4" class="w-full h-2.5 sm:h-2 bg-brand-200 rounded-lg appearance-none cursor-pointer accent-brand-700" oninput="updateScaleReadout('fatigue', this.value); syncCheckinSummary()">
+                            <div class="flex justify-between text-[11px] text-slate-600 mt-1.5">
+                                <span>0 (Full Energy)</span>
+                                <span>5 (Sluggish)</span>
+                                <span>10 (Severe Fatigue)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3.5 sm:p-4 bg-brand-100/70 border border-brand-300 border-l-4 border-l-brand-800 rounded-lg flex items-start sm:items-center space-x-3">
+                        <input type="checkbox" id="input-flare" onchange="syncCheckinSummary()" class="w-4 h-4 mt-0.5 sm:mt-0 shrink-0 rounded text-brand-700 focus:ring-brand-700 accent-brand-700">
+                        <div>
+                            <label for="input-flare" class="text-xs font-bold uppercase tracking-wider text-brand-950 cursor-pointer">5. Are you experiencing an active lupus flare today?</label>
+                            <p class="text-xs text-brand-900/80 mt-0.5">Check this box if today marks an acute symptom spike compared to your normal baseline.</p>
+                        </div>
+                    </div>
+
+                    <div class="p-4 border border-brand-200 rounded-xl bg-brand-25/70">
+                        <details class="cursor-pointer group">
+                            <summary class="font-bold text-xs uppercase tracking-wider text-brand-950 select-none flex flex-col sm:flex-row sm:items-center justify-between gap-2 list-none">
+                                <span class="inline-flex items-start sm:items-center gap-2">
+                                    <svg class="icon-md text-brand-700 mt-0.5 sm:mt-0" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                    </svg>
+                                    <span>Optional: Exercise & Physical Strain</span>
+                                </span>
+                                <span class="self-start sm:self-auto shrink-0 text-[11px] text-brand-700 font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white border border-brand-200">Expand / Collapse</span>
+                            </summary>
+                            <p class="text-xs text-brand-900/80 mt-3 mb-3 border-b border-brand-100 pb-2 leading-relaxed">
+                                Physical overexertion or prolonged mechanical strain can precede symptom shifts 24 to 48 hours later.
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                                <div class="p-3 bg-white border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
+                                    <label for="activity-level" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Activity Level</label>
+                                    <select id="activity-level" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
+                                        <option value="none">Rest / Minimal Movement</option>
+                                        <option value="light">Light (Walking, gentle stretch, yoga)</option>
+                                        <option value="moderate">Moderate (Brisk walk, swim, cycling)</option>
+                                        <option value="high">High-Impact (Heavy resistance, HIIT, running)</option>
+                                        <option value="labor">Prolonged Labor / Standing All Day</option>
+                                    </select>
+                                </div>
+                                <div class="p-3 bg-white border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
+                                    <label for="activity-minutes" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Duration (Minutes)</label>
+                                    <input type="number" id="activity-minutes" value="0" min="0" step="10" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white tabular-nums focus:border-brand-600 outline-none">
+                                </div>
+                                <div class="p-3 bg-white border-l-4 border-l-brand-500 rounded-r-lg flex items-center min-w-0">
+                                    <input type="checkbox" id="activity-overexertion" class="w-4 h-4 shrink-0 rounded text-brand-700 focus:ring-brand-700 accent-brand-700">
+                                    <label for="activity-overexertion" class="ml-2.5 text-xs font-semibold text-brand-950 cursor-pointer">Pushed joints past comfort / Overexerted</label>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+
+                    <div class="p-4 border border-brand-200 rounded-xl bg-brand-25/70">
+                        <details class="cursor-pointer group">
+                            <summary class="font-bold text-xs uppercase tracking-wider text-brand-950 select-none flex flex-col sm:flex-row sm:items-center justify-between gap-2 list-none">
+                                <span class="inline-flex items-start sm:items-center gap-2">
+                                    <svg class="icon-md text-brand-700 mt-0.5 sm:mt-0" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 12h18M3 18h18" />
+                                    </svg>
+                                    <span>Optional: Meals & Nutrition</span>
+                                </span>
+                                <span class="self-start sm:self-auto shrink-0 text-[11px] text-brand-700 font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white border border-brand-200">Expand / Collapse</span>
+                            </summary>
+                            <p class="text-xs text-brand-900/80 mt-3 mb-3 border-b border-brand-100 pb-2 leading-relaxed">
+                                Enter meals in plain text if desired; logged foods update rolling 30-day dietary estimates.
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                                <div class="p-3 bg-white border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
+                                    <label for="food-breakfast" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Breakfast</label>
+                                    <input type="text" id="food-breakfast" placeholder="e.g. Oatmeal with berries and chia seeds, black coffee" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
+                                </div>
+                                <div class="p-3 bg-white border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
+                                    <label for="food-lunch" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Lunch</label>
+                                    <input type="text" id="food-lunch" placeholder="e.g. Turkey wrap with spinach, apple" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
+                                </div>
+                                <div class="p-3 bg-white border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
+                                    <label for="food-dinner" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Dinner</label>
+                                    <input type="text" id="food-dinner" placeholder="e.g. Grilled salmon, sweet potato, steamed broccoli" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
+                                </div>
+                                <div class="p-3 bg-white border-l-4 border-l-brand-500 rounded-r-lg min-w-0">
+                                    <label for="food-snacks" class="block text-xs font-bold text-brand-900 uppercase tracking-wider mb-1">Snacks, Desserts & Beverages</label>
+                                    <input type="text" id="food-snacks" placeholder="e.g. Almonds, dark chocolate, herbal tea" class="w-full min-w-0 border border-brand-300 rounded-lg p-2 text-base sm:text-sm bg-white focus:border-brand-600 outline-none">
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <div class="px-4 sm:px-6 py-4 border-t border-brand-100 bg-brand-25/60 rounded-b-2xl shrink-0">
+                    <button type="button" onclick="saveCurrentEntry()" class="w-full py-3.5 bg-brand-700 hover:bg-brand-800 rounded-xl text-white font-bold text-xs uppercase tracking-widest shadow-button-purple transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600">
+                        Save Check-in, Analyze Triggers & Ingest Weather
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <section id="tab-analytics" role="tabpanel" aria-labelledby="tab-btn-analytics" class="hidden space-y-5 sm:space-y-6">
             <div class="flex flex-wrap justify-between items-center gap-3 bg-white p-4 border border-brand-200 rounded-xl shadow-subtle-purple">
@@ -603,6 +661,45 @@
             day: 'numeric'
         });
 
+        function openQuestionnaireModal() {
+            const modal = document.getElementById('questionnaire-modal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeQuestionnaireModal() {
+            const modal = document.getElementById('questionnaire-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('questionnaire-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    closeQuestionnaireModal();
+                }
+            }
+        });
+
+        function syncCheckinSummary() {
+            const dateVal = document.getElementById('input-date')?.value || 'Today';
+            const sleepVal = document.getElementById('input-sleep')?.value || '7.5';
+            const painVal = document.getElementById('input-pain')?.value || '3';
+            const fatigueVal = document.getElementById('input-fatigue')?.value || '4';
+            const flareChecked = Boolean(document.getElementById('input-flare')?.checked);
+
+            const elDate = document.getElementById('summary-date');
+            const elSleep = document.getElementById('summary-sleep');
+            const elPain = document.getElementById('summary-pain');
+            const elFatigue = document.getElementById('summary-fatigue');
+            const elFlare = document.getElementById('summary-flare');
+
+            if (elDate) elDate.innerText = dateVal;
+            if (elSleep) elSleep.innerText = `${sleepVal}h`;
+            if (elPain) elPain.innerText = `${painVal}/10`;
+            if (elFatigue) elFatigue.innerText = `${fatigueVal}/10`;
+            if (elFlare) elFlare.innerText = flareChecked ? 'Yes' : 'No';
+        }
+
         function updateScaleReadout(type, rawVal) {
             const val = parseInt(rawVal, 10);
             const label = document.getElementById(`label-${type}`);
@@ -621,6 +718,8 @@
                 pill.className = "text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-rose-100 text-rose-950 border border-rose-300";
             }
         }
+
+        syncCheckinSummary();
 
         function getUserStorageKey() {
             return activeUser && activeUser.email ? `lupus_records_${activeUser.email}` : 'lupus_records_guest';
@@ -880,6 +979,9 @@
             db.sort((a, b) => new Date(a.date) - new Date(b.date));
             setDB(db);
 
+            closeQuestionnaireModal();
+            syncCheckinSummary();
+
             showStatusBanner(
                 weatherLive
                     ? `Check-in saved for ${entryDate} with live weather (UV ${record.max_uv}, ΔP ${record.pressure_delta} hPa).`
@@ -963,7 +1065,7 @@
                 Plotly.purge('chart-heatmap');
 
                 const tBody = document.querySelector('#table-triggers tbody');
-                if (tBody) tBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs text-brand-800 bg-white">No logs recorded yet. Complete your first daily check-in above.</td></tr>';
+                if (tBody) tBody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-xs text-brand-800 bg-white">No logs recorded yet. Tap Start Check-In above to record your first entry.</td></tr>';
 
                 const docTriggerList = document.getElementById('doc-trigger-list');
                 if (docTriggerList) docTriggerList.innerHTML = '<li class="text-brand-800 italic">Awaiting patient entries to compute latent cross-correlations.</li>';
